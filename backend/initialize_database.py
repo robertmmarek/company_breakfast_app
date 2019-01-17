@@ -4,10 +4,8 @@ import sqlite3_util as sq3util
 from os import path
 
 DB_PATH = path.normpath("./database/breakfast.db")
-BREAKFASTS = "breakfasts"
-USERS = "users"
-
-
+BREAKFASTS = sq3util.BREAKFASTS
+USERS = sq3util.USERS
 
 
 if __name__ == "__main__":
@@ -26,8 +24,6 @@ if __name__ == "__main__":
 
     sq3util.initialize_users_table(cursor, USERS)
     sq3util.initialize_breakfasts_table(cursor, BREAKFASTS)
-    
-    print(sq3util.get_user_by_key(cursor))
 
     conn.commit()
     conn.close()

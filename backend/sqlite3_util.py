@@ -4,6 +4,8 @@ import datetime
 import re
 from os import path
 
+BREAKFASTS = 'breakfasts'
+USERS = 'users'
 USERS_COLUMNS = ['hash', 'name', 'surname', 'queue_count']
 BREAKFAST_COLUMNS = ['hash', 'done_by', 'date']
 
@@ -14,7 +16,7 @@ Sanitize string to not contain any strange values that could lead to SQL Injecti
 @return string
 """
 def sanitize_sql_string(string):
-    allowFilter = lambda x: False if re.match('[A-Za-z]', x)==None else True
+    allowFilter = lambda x: False if re.match('[A-Za-z\-0-9]', x)==None else True
     iterable = string.split()
     iterable = list(filter(allowFilter, iterable))
     return "".join(iterable)
@@ -27,10 +29,22 @@ def initialize_users_table(cursor, table_name):
                   +("(%s VARCHAR(255), %s VARCHAR(255), %s VARCHAR(255), %s INTEGER);" % tuple([sanitize_sql_string(el) for el in USERS_COLUMNS])))
     add_user(cursor, create_user('NULL', 'NULL'))
 
-def initialize_breakfasts_table(cursor, table_name):
+def initialize_breakfasts_table(cursor, table_name, breakfast_weekday=4):
     cursor.execute("CREATE TABLE "+sanitize_sql_string(table_name) \
                 +("(%s VARCHAR(255), %s VARCHAR(255), %s DATE);" % tuple([sanitize_sql_string(el) for el in BREAKFAST_COLUMNS])))
 
+    null_user = get_user_by_key(cursor)
+
+    today = datetime.date.today()
+    today_weekday = today.weekday()
+    days_difference = datetime.timedelta(days=breakfast_weekday-today_weekday)
+    first_breakfast = today + days_difference
+    interval_between_breakfasts = datetime.timedelta(days=7)
+
+    breakfast_dates = [first_breakfast+i*interval_between_breakfasts for i in range(0, 48)]
+
+    for date in breakfast_dates:
+        add_breakfast(cursor, create_breakfast(date, done_by=null_user['hash']))
 
 """
 add user to USERS table
@@ -39,7 +53,6 @@ add user to USERS table
 @return None
 """
 def add_user(cursor, user):
-    keys_order = ['hash', 'name', 'surname', 'queue_count']
     cursor.execute("INSERT INTO users ("+", ".join([sanitize_sql_string(el) for el in USERS_COLUMNS])+") \
                     VALUES ("+", ".join(["?" for key in USERS_COLUMNS])+");", tuple([user[key] for key in USERS_COLUMNS]))
 
@@ -52,7 +65,7 @@ Select user from table USERS based on specific key and value.
 """
 def get_user_by_key(cursor, key='rowid', value='1'):
     ret = None
-    cursor.execute("SELECT * FROM users WHERE "+sanitize_sql_string(key)+"=?", value)
+    cursor.execute("SELECT * FROM "+sanitize_sql_string(USERS)+" WHERE "+sanitize_sql_string(key)+"=?", value)
     found = cursor.fetchone()
 
     if found != None:
@@ -95,6 +108,7 @@ def hash_user(user):
     iterable_keys = sorted([key for key in user.keys()])
     values_string = "".join([str(user[key]) for key in iterable_keys])
     hasher.update(values_string.encode())
+    hasher.update(datetime.datetime.now().isoformat().encode())
     return hasher.hexdigest()
 """
 create breakfast appointment dictionary
@@ -110,14 +124,42 @@ def create_breakfast(date, done_by=''):
     return ret_dict
 
 """
+Update breakfast specified by date
+@cursor sqlite3 cursor object
+@update_dict values to be updated example: {'name': 'new_name'}
+@date date object, date of breakfast to be updated
+@return None
+"""
+def update_breakfast(cursor, update_dict, date):
+    update_table(cursor, BREAKFASTS, update_dict, {'date': sanitize_sql_string(date.isoformat())})
+
+"""
 add user to USERS table
 @cursor - sqlite3 cursor object
 @breakfast - dictionary containing breakfast data
 @return None
 """
 def add_breakfast(cursor, breakfast):
-    cursor.execute("INSERT INTO breakfast ("+", ".join([sanitize_sql_string(el) for el in BREAKFAST_COLUMNS])+") \
+    cursor.execute("INSERT INTO "+sanitize_sql_string(BREAKFASTS)+" ("+", ".join([sanitize_sql_string(el) for el in BREAKFAST_COLUMNS])+") \
                     VALUES ("+", ".join(["?" for key in BREAKFAST_COLUMNS])+");", tuple([breakfast[key] for key in BREAKFAST_COLUMNS]))
+
+
+"""
+Select user from table BREAKFASTS based on specific key and value. 
+@cursor sqlite3 cursor object
+@date date object, date of breakfast
+@return None if nothing found, dictionary of first element meeting date
+"""
+def get_breakfast(cursor, date):
+    ret = None
+    date_string = date.isoformat()
+    cursor.execute("SELECT * FROM "+sanitize_sql_string(BREAKFASTS)+" WHERE "+sanitize_sql_string('date')+"=?", date_string)
+    found = cursor.fetchone()
+
+    if found != None:
+        ret = {key: value for key, value in  zip(BREAKFAST_COLUMNS, list(found))}
+
+    return ret
 
 """
 hash dictionary containing breakfast
@@ -129,6 +171,7 @@ def hash_breakfast(breakfast):
     iterable_keys = sorted([key for key in breakfast.keys()])
     values_string = "".join([str(breakfast[key]) for key in iterable_keys])
     hasher.update(values_string.encode())
+    hasher.update(datetime.datetime.now().isoformat().encode())
     return hasher.hexdigest()
 
 
