@@ -65,7 +65,7 @@ Select user from table USERS based on specific key and value.
 """
 def get_user_by_key(cursor, key='rowid', value='1'):
     ret = None
-    cursor.execute("SELECT * FROM "+sanitize_sql_string(USERS)+" WHERE "+sanitize_sql_string(key)+"=?", value)
+    cursor.execute("SELECT * FROM "+sanitize_sql_string(USERS)+" WHERE "+sanitize_sql_string(key)+"=?", (value,))
     found = cursor.fetchone()
 
     if found != None:
@@ -81,7 +81,7 @@ Update user specified by search_dict by values in update_dict
 @return None
 """
 def update_user(cursor, update_dict, search_dict):
-    update_table(cursor, 'user', update_dict, search_dict)
+    update_table(cursor, USERS, update_dict, search_dict)
 
 """
 Generate user dictionary object based on passed parameters
@@ -95,7 +95,7 @@ def create_user(name, surname, queue_count=0):
     ret_dict['name'] = name
     ret_dict['surname'] = surname
     ret_dict['queue_count'] = int(queue_count)
-    ret_dict['hash'] = hash_user(ret_dict)
+    ret_dict['hash'] = _hash_user(ret_dict)
     return ret_dict
 
 """
@@ -103,7 +103,7 @@ hash dictionary containing user
 @user dictionary containing user data
 @return string containing hash
 """
-def hash_user(user):
+def _hash_user(user):
     hasher = hashlib.md5()
     iterable_keys = sorted([key for key in user.keys()])
     values_string = "".join([str(user[key]) for key in iterable_keys])
@@ -120,7 +120,7 @@ def create_breakfast(date, done_by=''):
     ret_dict = {}
     ret_dict['date'] = date.isoformat()
     ret_dict['done_by'] = done_by
-    ret_dict['hash'] = hash_breakfast(ret_dict)
+    ret_dict['hash'] = _hash_breakfast(ret_dict)
     return ret_dict
 
 """
@@ -131,6 +131,8 @@ Update breakfast specified by date
 @return None
 """
 def update_breakfast(cursor, update_dict, date):
+    if isinstance(date, str):
+        date = datetime.date.fromisoformat(date)
     update_table(cursor, BREAKFASTS, update_dict, {'date': sanitize_sql_string(date.isoformat())})
 
 """
@@ -153,7 +155,7 @@ Select user from table BREAKFASTS based on specific key and value.
 def get_breakfast(cursor, date):
     ret = None
     date_string = date.isoformat()
-    cursor.execute("SELECT * FROM "+sanitize_sql_string(BREAKFASTS)+" WHERE "+sanitize_sql_string('date')+"=?", date_string)
+    cursor.execute("SELECT * FROM "+sanitize_sql_string(BREAKFASTS)+" WHERE "+sanitize_sql_string('date')+"=?", (date_string,))
     found = cursor.fetchone()
 
     if found != None:
@@ -166,7 +168,7 @@ hash dictionary containing breakfast
 @breakfast dictionary containing breakfast data
 @return string, hash for breakfast
 """
-def hash_breakfast(breakfast):
+def _hash_breakfast(breakfast):
     hasher = hashlib.md5()
     iterable_keys = sorted([key for key in breakfast.keys()])
     values_string = "".join([str(breakfast[key]) for key in iterable_keys])
@@ -192,3 +194,54 @@ def update_table(cursor, table, update_dict, search_dict):
 
     cursor.execute(update_string+" "+condition_string+";", tuple([update_dict[key] for key in update_keys]+[search_dict[key] for key in condition_keys]))
 
+
+"""
+Get breakfast that is the closest one to currently available
+@cursor sqlite3 cursor object
+@date date object
+@return breakfast dictionary
+"""
+def get_nearest_breakfast(cursor, date):
+    date_diff = 4 - date.weekday()
+    date_diff = 6 - date.weekday() + 4 if date_diff < 0 else date_diff
+    timedelta = datetime.timedelta(days=date_diff) 
+    nearest_breakfast_date = date + timedelta
+    next_breakfast = get_breakfast(cursor, nearest_breakfast_date)
+    return next_breakfast
+
+"""
+Get next user with the lowest number of already made breakfasts
+@cursor sqlite3 cursor object
+@omit skip X users
+"""
+def get_next_maker(cursor, omit=0):
+    cursor.execute("SELECT * FROM "+sanitize_sql_string(USERS)+" WHERE rowid>1")
+    users = [_fetch_to_user(fetch) for fetch in cursor.fetchall()]
+    users.sort(key=lambda x: x['queue_count'])
+    return users[(0+omit)%len(users)] if len(users) > 0 else None
+
+"""
+Confirm that specified user made specific breakfast
+@cursor - sqlite3 cursor object
+@user - user dictionary
+@breakfast - breakfast dictionary
+"""
+def confirm_user_breakfast(cursor, user, breakfast):
+    update_breakfast(cursor, {'done_by': user['hash']}, breakfast['date'])
+    update_user(cursor, {'queue_count': user['queue_count']+1}, {'hash': user['hash']})
+
+"""
+@cursor - sqlite3 cursor
+@return - null user
+"""
+def get_null_user(cursor):
+    return get_user_by_key(cursor)
+
+def _convert_date_to_string(date):
+    return date.isoformat()
+
+def _fetch_to_user(user_fetch):
+    return {column: value for column, value in zip(USERS_COLUMNS, list(user_fetch))}
+
+def _fetch_to_breakfast(breakfast_fetch):
+    return {column: value for column, value in zip(BREAKFAST_COLUMNS, list(breakfast_fetch))}
