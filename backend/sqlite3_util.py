@@ -6,8 +6,10 @@ from os import path
 
 BREAKFASTS = 'breakfasts'
 USERS = 'users'
+ADMINS = 'admins'
 USERS_COLUMNS = ['hash', 'name', 'surname', 'queue_count']
 BREAKFAST_COLUMNS = ['hash', 'done_by', 'date']
+ADMINS_COLUMNS = ['login', 'password_hash']
 
 
 """
@@ -24,12 +26,16 @@ def sanitize_sql_string(string):
 def drop_table(cursor, table_name):
     cursor.execute("DROP TABLE "+sanitize_sql_string(table_name)+";")
 
-def initialize_users_table(cursor, table_name):
+def initialize_admins_table(cursor, table_name=ADMINS):
+    cursor.execute("CREATE TABLE "+sanitize_sql_string(table_name) \
+                  +("(%s VARCHAR(255), %s VARCHAR(255));" % tuple([sanitize_sql_string(el) for el in ADMINS_COLUMNS])))
+
+def initialize_users_table(cursor, table_name=USERS):
     cursor.execute("CREATE TABLE "+sanitize_sql_string(table_name) \
                   +("(%s VARCHAR(255), %s VARCHAR(255), %s VARCHAR(255), %s INTEGER);" % tuple([sanitize_sql_string(el) for el in USERS_COLUMNS])))
     add_user(cursor, create_user('NULL', 'NULL'))
 
-def initialize_breakfasts_table(cursor, table_name, breakfast_weekday=4):
+def initialize_breakfasts_table(cursor, table_name=BREAKFASTS, breakfast_weekday=4):
     cursor.execute("CREATE TABLE "+sanitize_sql_string(table_name) \
                 +("(%s VARCHAR(255), %s VARCHAR(255), %s DATE);" % tuple([sanitize_sql_string(el) for el in BREAKFAST_COLUMNS])))
 
@@ -145,6 +151,14 @@ def add_breakfast(cursor, breakfast):
     cursor.execute("INSERT INTO "+sanitize_sql_string(BREAKFASTS)+" ("+", ".join([sanitize_sql_string(el) for el in BREAKFAST_COLUMNS])+") \
                     VALUES ("+", ".join(["?" for key in BREAKFAST_COLUMNS])+");", tuple([breakfast[key] for key in BREAKFAST_COLUMNS]))
 
+"""
+delete specified breakfast
+@cursor - sqlite3 cursor object
+@date - date object
+@return None
+"""
+def _delete_breakfast(cursor, date):
+    cursor.execute("DELETE FROM "+sanitize_sql_string(BREAKFASTS)+" WHERE date=?;", (date.isoformat()))
 
 """
 Select user from table BREAKFASTS based on specific key and value. 
@@ -155,13 +169,23 @@ Select user from table BREAKFASTS based on specific key and value.
 def get_breakfast(cursor, date):
     ret = None
     date_string = date.isoformat()
-    cursor.execute("SELECT * FROM "+sanitize_sql_string(BREAKFASTS)+" WHERE "+sanitize_sql_string('date')+"=?", (date_string,))
+    cursor.execute("SELECT * FROM "+sanitize_sql_string(BREAKFASTS)+" WHERE "+sanitize_sql_string('date')+"=?;", (date_string,))
     found = cursor.fetchone()
 
     if found != None:
         ret = {key: value for key, value in  zip(BREAKFAST_COLUMNS, list(found))}
 
     return ret
+
+"""
+Update BREAKFASTS table by removing too old breakfasts and preparing new ones
+@cursor - sqlite3 cursor object
+@total_max - int, totala number of rows that should be present in database
+@buffer - int, number of weeks, counting from today to end of database that is minimal
+@return - None
+"""
+def cleanup_breakfasts(cursor, total_max=48, buffer=4):
+    pass
 
 """
 hash dictionary containing breakfast
@@ -237,6 +261,42 @@ def confirm_user_breakfast(cursor, user, breakfast):
 def get_null_user(cursor):
     return get_user_by_key(cursor)
 
+"""
+Add admin to database
+@cursor - sqlite3 cursor object
+@admin - admin dict compatible with create_admin
+@return - None
+"""
+def add_admin(cursor, admin):
+    cursor.execute("SELECT * FROM "+sanitize_sql_string(ADMINS)+" WHERE login=?;", (admin['login'],))
+    if len(cursor.fetchall()) > 0:
+        raise Exception('This login already exists!')
+
+    cursor.execute("INSERT INTO "+sanitize_sql_string(ADMINS)+" ("+", ".join([sanitize_sql_string(el) for el in ADMINS_COLUMNS])+") \
+                    VALUES ("+", ".join(["?" for key in ADMINS_COLUMNS])+");", tuple([admin[key] for key in ADMINS_COLUMNS]))
+
+"""
+create dictionary containing admin dict
+@cursor - sqlite3 cursor object
+@login - string
+@plain_password - string
+@return dict
+"""
+def create_admin(cursor, login, plain_password):
+    hasher = hashlib.md5()
+    hasher.update(plain_password.encode())
+    return {'login': login, 'password_hash': hasher.hexdigest()}
+
+"""
+Check if admin is correct
+@cursor - sqlite3 cursor object
+@admin - admin dict compatible with create_admin dict
+"""
+def verify_admin(cursor, admin):
+    cursor.execute("SELECT * FROM "+sanitize_sql_string(ADMINS)+" WHERE login=? AND password_hash=?", tuple(admin['login'], admin['password_hash']))
+    return len(cursor.fetchall()) > 0
+
+
 def _convert_date_to_string(date):
     return date.isoformat()
 
@@ -245,3 +305,5 @@ def _fetch_to_user(user_fetch):
 
 def _fetch_to_breakfast(breakfast_fetch):
     return {column: value for column, value in zip(BREAKFAST_COLUMNS, list(breakfast_fetch))}
+
+
