@@ -1,3 +1,4 @@
 backend/env/
 backend/database/
 backend/__pycache__/
+backend/initial_users.csv
