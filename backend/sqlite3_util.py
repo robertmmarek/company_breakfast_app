@@ -10,6 +10,8 @@ ADMINS = 'admins'
 USERS_COLUMNS = ['hash', 'name', 'surname', 'queue_count']
 BREAKFAST_COLUMNS = ['hash', 'done_by', 'date']
 ADMINS_COLUMNS = ['login', 'password_hash']
+BREAKFAST_DAY = 4 #friday
+N_BREAKFASTS = 48 #breakfasts to store in database
 
 
 """
@@ -35,19 +37,12 @@ def initialize_users_table(cursor, table_name=USERS):
                   +("(%s VARCHAR(255), %s VARCHAR(255), %s VARCHAR(255), %s INTEGER);" % tuple([sanitize_sql_string(el) for el in USERS_COLUMNS])))
     add_user(cursor, create_user('NULL', 'NULL'))
 
-def initialize_breakfasts_table(cursor, table_name=BREAKFASTS, breakfast_weekday=4):
+def initialize_breakfasts_table(cursor, table_name=BREAKFASTS):
     cursor.execute("CREATE TABLE "+sanitize_sql_string(table_name) \
                 +("(%s VARCHAR(255), %s VARCHAR(255), %s DATE);" % tuple([sanitize_sql_string(el) for el in BREAKFAST_COLUMNS])))
 
     null_user = get_user_by_key(cursor)
-
-    today = datetime.date.today()
-    today_weekday = today.weekday()
-    days_difference = datetime.timedelta(days=breakfast_weekday-today_weekday)
-    first_breakfast = today + days_difference
-    interval_between_breakfasts = datetime.timedelta(days=7)
-
-    breakfast_dates = [first_breakfast+i*interval_between_breakfasts for i in range(0, 48)]
+    breakfast_dates = _generate_n_breakfast_dates(datetime.date.today(), n=N_BREAKFASTS, breakfast_weekday=BREAKFAST_DAY)
 
     for date in breakfast_dates:
         add_breakfast(cursor, create_breakfast(date, done_by=null_user['hash']))
@@ -157,8 +152,10 @@ delete specified breakfast
 @date - date object
 @return None
 """
-def _delete_breakfast(cursor, date):
-    cursor.execute("DELETE FROM "+sanitize_sql_string(BREAKFASTS)+" WHERE date=?;", (date.isoformat()))
+def _delete_breakfast(cursor, value, key='date'):
+    if isinstance(datetime.date, value):
+        value = value.isoformat()
+    cursor.execute("DELETE FROM "+sanitize_sql_string(BREAKFASTS)+" WHERE "+sanitize_sql_string(key)+"=?;", (value))
 
 """
 Select user from table BREAKFASTS based on specific key and value. 
@@ -180,12 +177,33 @@ def get_breakfast(cursor, date):
 """
 Update BREAKFASTS table by removing too old breakfasts and preparing new ones
 @cursor - sqlite3 cursor object
-@total_max - int, totala number of rows that should be present in database
+@total_max - int, total number of rows that should be present in database
 @buffer - int, number of weeks, counting from today to end of database that is minimal
 @return - None
 """
-def cleanup_breakfasts(cursor, total_max=48, buffer=4):
-    pass
+def cleanup_breakfasts(cursor, total_max=N_BREAKFASTS, buffer=4):
+    cursor.execute("SELECT rowid, date FROM "+sanitize_sql_string(BREAKFASTS)+";")
+    found = cursor.fetchall()
+    found_sorted = sorted(found, key=lambda x: x[0])
+    highest_index = int(found_sorted[-1][0])
+    highest_breakfast_date = str(found_sorted[-1][1])
+    breakfast = get_nearest_breakfast(cursor, datetime.date.today())
+
+    cursor.execute("SELECT rowid FROM "+sanitize_sql_string(BREAKFASTS)+"WHERE hash=?;", (breakfast['hash'],))
+    newest_index = cursor.fetchone()[0]
+
+    to_delete_from_beginning = max(newest_index-(highest_index-buffer), 0)
+
+    for i in range(0, to_delete_from_beginning):
+        _delete_breakfast(cursor, str(i+1), key='rowid')
+
+    to_add = max(0, (total_max-newest_index)+to_delete_from_beginning)
+    new_dates = _generate_n_breakfast_dates(highest_breakfast_date, n=to_add, breakfast_weekday=BREAKFAST_DAY)
+
+    for d in new_dates:
+        add_breakfast(cursor, create_breakfast(d))
+
+
 
 """
 hash dictionary containing breakfast
@@ -226,8 +244,8 @@ Get breakfast that is the closest one to currently available
 @return breakfast dictionary
 """
 def get_nearest_breakfast(cursor, date):
-    date_diff = 4 - date.weekday()
-    date_diff = 6 - date.weekday() + 4 if date_diff < 0 else date_diff
+    date_diff = BREAKFAST_DAY - date.weekday()
+    date_diff = 6 - date.weekday() + BREAKFAST_DAY if date_diff < 0 else date_diff
     timedelta = datetime.timedelta(days=date_diff) 
     nearest_breakfast_date = date + timedelta
     next_breakfast = get_breakfast(cursor, nearest_breakfast_date)
@@ -306,4 +324,19 @@ def _fetch_to_user(user_fetch):
 def _fetch_to_breakfast(breakfast_fetch):
     return {column: value for column, value in zip(BREAKFAST_COLUMNS, list(breakfast_fetch))}
 
+"""
+generate n closest breakfast dates from start_date
+@start_date date object
+@breakfast_weekday - int
+@n int
+@return list of date object
+"""
+def _generate_n_breakfast_dates(start_date, n=48, breakfast_weekday=4):
+    date_weekday = start_date.weekday()
+    days_difference = datetime.timedelta(days=(breakfast_weekday-date_weekday))
+    first_breakfast = start_date + days_difference
+    interval_between_breakfasts = datetime.timedelta(days=7)
 
+    breakfast_dates = [first_breakfast+i*interval_between_breakfasts for i in range(0, n)]
+
+    return breakfast_dates
