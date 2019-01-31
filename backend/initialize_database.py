@@ -10,10 +10,9 @@ BREAKFASTS = sq3util.BREAKFASTS
 USERS = sq3util.USERS
 ADMINS = sq3util.ADMINS
 
-def load_users(filepath):
+def load_users(filepath, columns=sq3util.USERS_COLUMNS[1::]):
     filepath = path.normpath(filepath)
     users = []
-    columns = sq3util.USERS_COLUMNS[1::]
     with open(filepath, 'r') as f:
         reader = csv.reader(f)
         users = [{column: field for column, field in zip(columns, fields)} for fields in reader]

@@ -153,9 +153,9 @@ delete specified breakfast
 @return None
 """
 def _delete_breakfast(cursor, value, key='date'):
-    if isinstance(datetime.date, value):
+    if isinstance(value, datetime.date):
         value = value.isoformat()
-    cursor.execute("DELETE FROM "+sanitize_sql_string(BREAKFASTS)+" WHERE "+sanitize_sql_string(key)+"=?;", (value))
+    cursor.execute("DELETE FROM "+sanitize_sql_string(BREAKFASTS)+" WHERE "+sanitize_sql_string(key)+"=?;", (value,))
 
 """
 Select user from table BREAKFASTS based on specific key and value. 
@@ -181,15 +181,15 @@ Update BREAKFASTS table by removing too old breakfasts and preparing new ones
 @buffer - int, number of weeks, counting from today to end of database that is minimal
 @return - None
 """
-def cleanup_breakfasts(cursor, total_max=N_BREAKFASTS, buffer=4):
+def cleanup_breakfasts(cursor, buffer=4):
     cursor.execute("SELECT rowid, date FROM "+sanitize_sql_string(BREAKFASTS)+";")
     found = cursor.fetchall()
     found_sorted = sorted(found, key=lambda x: x[0])
     highest_index = int(found_sorted[-1][0])
-    highest_breakfast_date = str(found_sorted[-1][1])
+    highest_breakfast_date = datetime.date.fromisoformat(str(found_sorted[-1][1]))
     breakfast = get_nearest_breakfast(cursor, datetime.date.today())
 
-    cursor.execute("SELECT rowid FROM "+sanitize_sql_string(BREAKFASTS)+"WHERE hash=?;", (breakfast['hash'],))
+    cursor.execute("SELECT rowid FROM "+sanitize_sql_string(BREAKFASTS)+" WHERE hash=?;", (breakfast['hash'],))
     newest_index = cursor.fetchone()[0]
 
     to_delete_from_beginning = max(newest_index-(highest_index-buffer), 0)
@@ -197,11 +197,13 @@ def cleanup_breakfasts(cursor, total_max=N_BREAKFASTS, buffer=4):
     for i in range(0, to_delete_from_beginning):
         _delete_breakfast(cursor, str(i+1), key='rowid')
 
-    to_add = max(0, (total_max-newest_index)+to_delete_from_beginning)
+    to_add = max(0, (N_BREAKFASTS-newest_index)+to_delete_from_beginning)
     new_dates = _generate_n_breakfast_dates(highest_breakfast_date, n=to_add, breakfast_weekday=BREAKFAST_DAY)
 
+    null_user = get_null_user(cursor)
+
     for d in new_dates:
-        add_breakfast(cursor, create_breakfast(d))
+        add_breakfast(cursor, create_breakfast(d, done_by=null_user['hash']))
 
 
 
@@ -300,7 +302,7 @@ create dictionary containing admin dict
 @plain_password - string
 @return dict
 """
-def create_admin(cursor, login, plain_password):
+def create_admin(login, plain_password):
     hasher = hashlib.md5()
     hasher.update(plain_password.encode())
     return {'login': login, 'password_hash': hasher.hexdigest()}
