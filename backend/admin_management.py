@@ -10,7 +10,7 @@ def add_admin(login, password):
     conn = sqlite3.connect(os.path.normpath('./database/breakfast.db'))
     cursor = conn.cursor()
     try:
-        sq3util.add_admin(cursor, sq3util.create_admin(cursor, login, password))
+        sq3util.add_admin(cursor, sq3util.create_admin(login, password))
     except Exception as e:
         print(e)
 

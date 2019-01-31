@@ -272,7 +272,13 @@ Confirm that specified user made specific breakfast
 """
 def confirm_user_breakfast(cursor, user, breakfast):
     update_breakfast(cursor, {'done_by': user['hash']}, breakfast['date'])
-    update_user(cursor, {'queue_count': user['queue_count']+1}, {'hash': user['hash']})
+
+    if breakfast['done_by'] == get_null_user(cursor)['hash']:
+        update_user(cursor, {'queue_count': user['queue_count']+1}, {'hash': user['hash']})
+    else:
+        previous_maker = get_user_by_key(cursor, key='hash', value=breakfast['done_by'])
+        update_user(cursor, {'queue_count': previous_maker['queue_count']-1}, {'hash': previous_maker['hash']})
+        update_user(cursor, {'queue_count': user['queue_count']+1}, {'hash': user['hash']})
 
 """
 @cursor - sqlite3 cursor
@@ -313,7 +319,7 @@ Check if admin is correct
 @admin - admin dict compatible with create_admin dict
 """
 def verify_admin(cursor, admin):
-    cursor.execute("SELECT * FROM "+sanitize_sql_string(ADMINS)+" WHERE login=? AND password_hash=?", tuple(admin['login'], admin['password_hash']))
+    cursor.execute("SELECT * FROM "+sanitize_sql_string(ADMINS)+" WHERE login=? AND password_hash=?", tuple([admin['login'], admin['password_hash']]))
     return len(cursor.fetchall()) > 0
 
 
