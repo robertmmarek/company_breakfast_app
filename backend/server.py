@@ -5,6 +5,7 @@ import json
 import sqlite3_util as sq3ut
 
 from flask import Flask, request
+from flask_cors import CORS, cross_origin
 
 DATABASE = os.path.normpath("./database/breakfast.db")
 print(os.path.abspath(DATABASE))
@@ -21,8 +22,10 @@ def close_connection_to_db(conn):
 cursor = sqlite3.connect(DATABASE)
 
 app = Flask(__name__)
+CORS(app)
 
 @app.route('/current_breakfast', methods=['GET'])
+@cross_origin()
 def current_breakfast():
     if request.method == "GET":
         conn, cursor = connect_to_db()
@@ -39,6 +42,7 @@ def current_breakfast():
         return json.dumps(nearest_breakfast)
 
 @app.route('/<int:to_omit>_in_making_queue', methods=['GET'])
+@cross_origin()
 def next_maker(to_omit):
     if request.method == "GET":
         conn, cursor = connect_to_db()
@@ -47,6 +51,7 @@ def next_maker(to_omit):
         return json.dumps(next_maker)
 
 @app.route('/attach_person_from_queue_to_brakfast/<int:which_one>', methods=['POST'])
+@cross_origin()
 def confirm_breakfast(which_one):
     login = ''
     password = ''
