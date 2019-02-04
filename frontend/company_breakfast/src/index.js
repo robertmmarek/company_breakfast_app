@@ -147,7 +147,10 @@ class ConfirmationPanel extends React.Component
         this.reloadUser();
 
         let eventSingleton = new EventSingleton();
-        eventSingleton.subscribeToEvent('LOGON_CORRECT', (data)=>{alert('LOGON CORRECT!')});
+        eventSingleton.subscribeToEvent('LOGON_CORRECT', (data)=>{
+            alert('LOGON CORRECT!');
+            this.reloadUser();
+        });
         eventSingleton.subscribeToEvent('LOGON_FAILED', (data)=>{alert('LOGON FAILED!')});
     }
 
@@ -198,7 +201,7 @@ class ConfirmationPanel extends React.Component
             {
                 ret_stack.push(<div>{"loading_user"}</div>)
             }else if(this.state.loaded_user != undefined){
-                ret_stack.push(<div>{this.state.loaded_user.name+" "+this.state.loaded_user.surname}</div>)
+                ret_stack.push(<div>{this.state.loaded_user.name+" "+this.state.loaded_user.surname+" "+this.state.loaded_user.queue_count}</div>)
             }
 
             ret_stack.push(<button onClick={(data)=>this.changeSelection()}>{"increment"}</button>)
