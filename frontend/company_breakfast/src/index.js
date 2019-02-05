@@ -85,12 +85,12 @@ class CurrentBreakfast extends React.Component
                 <ReactCSSTransitionGroup transitionName="simple" transitionEnterTimeout={1000} transitionLeaveTimeout={300}>
                 <p class={"big-text"}>{"Next breakfast date: "}</p>
                 {this.state.breakfastDate != ''?
-                <p class={"medium-text"} key="date">{this.state.breakfastDate}</p>
+                <p class={"medium-text important"} key="date">{this.state.breakfastDate}</p>
                 :<p></p>
                 }
                 <p class={"big-text"}>{"Will make: "}</p>
                 {this.state.breakfastMaker != ''?
-                <p class={"medium-text"} key="user">{this.state.breakfastMaker}</p>
+                <p class={"medium-text important"} key="user">{this.state.breakfastMaker}</p>
                 :<p></p>
                 }
                 </ReactCSSTransitionGroup>
@@ -118,7 +118,7 @@ class UserQueue extends React.Component
     constructor(props)
     {
         super(props);
-        this.state = {queue: [undefined, undefined, undefined, undefined, undefined, undefined]};
+        this.state = {queue: new Array(10)};
         this.updateQueue();
         let eventSingleton = new EventSingleton();
         eventSingleton.subscribeToEvent('BREAKFAST_CYCLIC_UPDATE', (data)=>this.updateQueue());
@@ -208,29 +208,59 @@ class ConfirmationPanel extends React.Component
 
     panelDiv()
     {
+        
         let ret_stack = [];
         if(this.state.activated)
         {
+            /*
             if(this.state.current_selection > 0){
-                ret_stack.push(<button onClick={(data)=>this.changeSelection(true)}>{"decrement"}</button>);
+                ret_stack.push(<a key="decrement-button" href="#" onClick={(data)=>this.changeSelection(true)} class="button6 float-left">{"decrement"}</a>);
             } 
             
             if(this.state.loading_user || this.state.loaded_user == undefined)
             {
-                ret_stack.push(<div>{"loading_user"}</div>)
+                ret_stack.push(<div class="loading float-left">{"loading_user"}</div>)
             }else if(this.state.loaded_user != undefined){
-                ret_stack.push(<div>{this.state.loaded_user.name+" "+this.state.loaded_user.surname+" "+this.state.loaded_user.queue_count}</div>)
+                ret_stack.push(<div class="float-left">{this.state.loaded_user.name+" "+this.state.loaded_user.surname+" "+this.state.loaded_user.queue_count}</div>)
             }
 
-            ret_stack.push(<button onClick={(data)=>this.changeSelection()}>{"increment"}</button>)
-            ret_stack.push(<button onClick={(event)=>this.setState({send_popup: true})}>
+            ret_stack.push(<a key="increment-button" href="#" onClick={(data)=>this.changeSelection()} class="button6 float-left">{"increment"}</a>);
+            ret_stack.push(<a key="send-confirmation-button" href="#" onClick={(event)=>this.setState({send_popup: true})} class="button6 new-line">
                                            {"SEND CONFIRMATION"}
-                                            </button>);
+                                            </a>);
+            */
+           return(<div class="confirmation-panel-div">
+           <div class="center">
+                        {(this.state.current_selection > 0) ? 
+                            <a key="decrement-button" href="#" onClick={(data)=>this.changeSelection(true)} class="button6 left-user-selection-button">{"-"}</a>
+                            :<div class="left-user-selection-button"></div>
+                        }
+                        <table class="user-preview">
+                        <tr>
+                            <th>name</th>
+                            <th>breakfast done</th>
+                        </tr>
+                        {(this.state.loading_user) ? 
+                            <tr>
+                                <td>LOADING</td>
+                                <td>LOADING</td>
+                            </tr>
+                            :<tr>
+                                <td>{this.state.loaded_user.name+" "+this.state.loaded_user.surname}</td>
+                                <td>{this.state.loaded_user.queue_count}</td>
+                            </tr>
+                        }
+                        </table>
+                        <a key="increment-button" href="#" onClick={(data)=>this.changeSelection()} class="button6 right-user-selection-button">{"+"}</a>
+                    </div>
+                    <a key="send-confirmation-button" href="#" onClick={(event)=>this.setState({send_popup: true})} class="new-line button6">
+                        {"SEND CONFIRMATION"}
+                    </a>
+                </div>
+           );
         }
-        else{
-            ret_stack.push(<div></div>);
-        }
-        return(ret_stack);
+        
+        return(<div></div>);
     }
 
     managePopup()
@@ -246,7 +276,7 @@ class ConfirmationPanel extends React.Component
             </div>)
         }
         else{
-            return(<div></div>)
+            return(<div></div>);
         }
 
     }
@@ -257,9 +287,11 @@ class ConfirmationPanel extends React.Component
         let send_popup = this.managePopup();
 
         return(
-            <div>
-                <button onClick={(event)=>this.setState({activated: !this.state.activated})}>{this.state.activated?"hide confirmation panel":"show confirmation panel"}</button>
-                <ReactCSSTransitionGroup transitionName="simple" transitionEnterTimeout={500} transitionLeaveTimeout={300}>
+            <div class="confirmation-panel-show-button-div">
+                <a href="#" onClick={(event)=>this.setState({activated: !this.state.activated})} class="button6">
+                {this.state.activated?"hide confirmation panel":"show confirmation panel"}
+                </a>
+                <ReactCSSTransitionGroup transitionName="simple" transitionEnterTimeout={1000} transitionLeaveTimeout={500}>
                 {this.state.activated ? 
                     <div key={"panel"}>
                     {panel}

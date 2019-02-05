@@ -27,6 +27,7 @@ body{
     background-color: rgba(255, 255, 255, 0.9);
     text-align: center;
     opacity: 1.0;
+    border-radius: 13px;
 }
 
 .queue-div
@@ -37,6 +38,59 @@ body{
     text-align: center;
     align-items: center;
     opacity: 1.0;
+    border-radius: 13px;
+}
+
+.confirmation-panel-show-button-div
+{
+    margin-top: 2%; 
+    border: 0px;
+    background-color: rgba(255, 255, 255, 0.0);
+    text-align: center;
+    align-items: center;
+    opacity: 1.0;
+}
+
+.confirmation-panel-div{
+    margin-top: 2%; 
+    border: 5px solid #482c10;
+    background-color: rgba(255, 255, 255, 0.9);
+    text-align: center;
+    align-items: center;
+    opacity: 1.0;
+    border-radius: 13px;
+    padding-top: 1%;
+    padding-bottom: 1%;
+    overflow: auto;
+}
+
+.block{
+    display: block;
+}
+
+.inline-block{
+    display: inline-block;
+}
+
+.float-left{
+    float: left;
+}
+
+.new-line{
+    clear: both;
+}
+
+table.user-preview
+{
+    border-collapse: collapse;
+    width: 40%;
+    margin-bottom:2%;
+    display: inline-block;
+}
+
+table.user-preview td
+{
+    width:60%;
 }
 
 .queue-table
@@ -44,7 +98,7 @@ body{
     border-collapse: collapse;
     margin: 0 auto;
     width: 100%;
-    
+    margin-bottom:2%;
 }
 
 .queue-table tr:hover
@@ -94,12 +148,50 @@ body{
 
 .center
 {
-    margin: auto;
-    width: 50%;
+    margin: 0 auto;
+    min-height: 1px;
+    text-align: center;
 }
 
+.button6{
+    display:inline-block;
+    padding:0.7em 1.4em;
+    margin:0 0.3em 0.3em 0;
+    border-radius:0.15em;
+    box-sizing: border-box;
+    text-decoration:none;
+    font-family: Impact;
+    text-transform:uppercase;
+    font-weight:400;
+    color:#FFFFFF;
+    background-color:#f94e1a;
+    box-shadow:inset 0 -0.6em 0 -0.35em rgba(0,0,0,0.17);
+    text-align:center;
+    position:relative;
+}
+a.button6:active{
+    top:0.1em;
+}
 
+.important{
+    color: red;
+}
 
+.left-user-selection-button{
+    width:5%;
+    display: inline-block;
+    min-height: 1px;
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.right-user-selection-button{
+    width:5%;
+    display: inline-block;
+    min-height: 1px;
+    margin-left: 0;
+    margin-right: 0;
+}
 /* 
 #f94e1a
 #ff8c3b
