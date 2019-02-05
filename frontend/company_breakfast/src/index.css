@@ -1,1 +1,109 @@
+.simple-enter{
+    opacity: 0.01;
+}
 
+.simple-enter.simple-enter-active{
+    opacity: 1;
+    transition: opacity 500ms ease-in;
+}
+
+.simple-leave{
+    opacity: 1;
+}
+
+.simple-leave.simple-leave-active{
+    opacity: 0.01;
+    transition: opacity 300ms ease-in;
+}
+
+body{
+    background-image: url("./img/background.png");
+}
+
+.next-breakfast-div
+{
+    margin-top:2%;
+    border: 5px solid #482c10;
+    background-color: rgba(255, 255, 255, 0.9);
+    text-align: center;
+    opacity: 1.0;
+}
+
+.queue-div
+{
+    margin-top: 2%; 
+    border: 5px solid #482c10;
+    background-color: rgba(255, 255, 255, 0.9);
+    text-align: center;
+    align-items: center;
+    opacity: 1.0;
+}
+
+.queue-table
+{
+    border-collapse: collapse;
+    margin: 0 auto;
+    width: 100%;
+    
+}
+
+.queue-table tr:hover
+{
+    background-color: #f595dd;
+}
+
+.queue-table th
+{
+    border-bottom: 1px solid;
+    padding: 0px;
+    text-align: center;
+    vertical-align: center;
+    width: 30%;
+}
+
+.queue-table td
+{
+    border-bottom: 1px solid;
+    padding: 0px;
+    text-align: center;
+    vertical-align: center;
+    width: 30%;
+}
+
+.big-text
+{
+    color: black;
+    font-family: Impact;
+    font-size: 30;
+    font-weight: bold;
+}
+
+.medium-text
+{
+    color: black;
+    font-family: Impact;
+    font-size: 15;
+}
+
+.small-text
+{
+    color: black;
+    font-family: Impact;
+    font-size: 11;
+}
+
+.center
+{
+    margin: auto;
+    width: 50%;
+}
+
+
+
+/* 
+#f94e1a
+#ff8c3b
+#fdfbfc
+#482c10
+#af783e
+*/

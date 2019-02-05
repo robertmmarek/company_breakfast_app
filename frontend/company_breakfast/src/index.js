@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import ReactCSSTransitionGroup from 'react-addons-css-transition-group';
 import './index.css';
 
 
@@ -80,11 +81,19 @@ class CurrentBreakfast extends React.Component
     render()
     {
         return(
-            <div>
-                <div>{"Next breakfast date: "}</div>
-                <div>{this.state.breakfastDate}</div>
-                <div>{"Will make: "}</div>
-                <div>{this.state.breakfastMaker}</div>
+            <div class={"next-breakfast-div"}>
+                <ReactCSSTransitionGroup transitionName="simple" transitionEnterTimeout={1000} transitionLeaveTimeout={300}>
+                <p class={"big-text"}>{"Next breakfast date: "}</p>
+                {this.state.breakfastDate != ''?
+                <p class={"medium-text"} key="date">{this.state.breakfastDate}</p>
+                :<p></p>
+                }
+                <p class={"big-text"}>{"Will make: "}</p>
+                {this.state.breakfastMaker != ''?
+                <p class={"medium-text"} key="user">{this.state.breakfastMaker}</p>
+                :<p></p>
+                }
+                </ReactCSSTransitionGroup>
             </div>
         );
     }
@@ -112,7 +121,8 @@ class UserQueue extends React.Component
         this.state = {queue: [undefined, undefined, undefined, undefined, undefined, undefined]};
         this.updateQueue();
         let eventSingleton = new EventSingleton();
-        eventSingleton.subscribeToEvent('BREAKFAST_CYCLIC_UPDATE', ()=>this.updateQueue);
+        eventSingleton.subscribeToEvent('BREAKFAST_CYCLIC_UPDATE', (data)=>this.updateQueue());
+        eventSingleton.subscribeToEvent('LOGON_CORRECT', (data)=>this.updateQueue());
     }
 
     render()
@@ -121,12 +131,20 @@ class UserQueue extends React.Component
         if(this.state.queue.every((value)=>value!==undefined))
         {
             let queue = [];
-            this.state.queue.forEach(q => {
-                queue.push(<div>{q.name}</div>);
+            this.state.queue.forEach((q, index) => {
+                queue.push(<tr><td>{index}</td><td>{q.name}</td><td>{q.done_already}</td></tr>);
             });
             return(
-                <div>
+                <div class="queue-div">
+                <p class="big-text">Maker queue:</p>
+                    <table class="queue-table">
+                    <tr>
+                        <th>ln</th>
+                        <th>name</th>
+                        <th>breakfasts done</th>
+                    </tr>
                     {queue}
+                    </table>
                 </div>
             );
         }
@@ -148,7 +166,7 @@ class ConfirmationPanel extends React.Component
 
         let eventSingleton = new EventSingleton();
         eventSingleton.subscribeToEvent('LOGON_CORRECT', (data)=>{
-            alert('LOGON CORRECT!');
+            console.log('LOGON CORRECT!');
             this.reloadUser();
         });
         eventSingleton.subscribeToEvent('LOGON_FAILED', (data)=>{alert('LOGON FAILED!')});
@@ -241,7 +259,14 @@ class ConfirmationPanel extends React.Component
         return(
             <div>
                 <button onClick={(event)=>this.setState({activated: !this.state.activated})}>{this.state.activated?"hide confirmation panel":"show confirmation panel"}</button>
-                {panel}
+                <ReactCSSTransitionGroup transitionName="simple" transitionEnterTimeout={500} transitionLeaveTimeout={300}>
+                {this.state.activated ? 
+                    <div key={"panel"}>
+                    {panel}
+                    </div>:<div></div>
+                }
+                
+                </ReactCSSTransitionGroup>
                 {this.state.send_popup?send_popup:<div></div>}
             </div>
         );
