@@ -161,15 +161,15 @@ class ConfirmationPanel extends React.Component
     constructor(props)
     {
         super(props);
-        this.state = {activated: false, loading_user: false, loaded_user: undefined, current_selection: 0, send_popup: false}
+        this.state = {activated: false, loading_user: false, loaded_user: undefined, current_selection: 0, send_popup: false, logon_failed: false, success_animation: false}
         this.reloadUser();
 
         let eventSingleton = new EventSingleton();
         eventSingleton.subscribeToEvent('LOGON_CORRECT', (data)=>{
-            console.log('LOGON CORRECT!');
+            this.setState({send_popup: false, logon_failed: false, success_animation: true});
             this.reloadUser();
         });
-        eventSingleton.subscribeToEvent('LOGON_FAILED', (data)=>{alert('LOGON FAILED!')});
+        eventSingleton.subscribeToEvent('LOGON_FAILED', (data)=>{this.setState({logon_failed: true})});
     }
 
     confirmUser()
@@ -246,7 +246,7 @@ class ConfirmationPanel extends React.Component
                 </tr>
             </table>
             </div>
-                    <a key="send-confirmation-button" href="#" onClick={(event)=>this.setState({send_popup: true})} class="new-line button6">
+                    <a key="send-confirmation-button" href="#" onClick={(event)=>this.setState({send_popup: true, success_animation: false})} class="new-line button6">
                         {"SEND CONFIRMATION"}
                     </a>
                 </div>
@@ -261,13 +261,14 @@ class ConfirmationPanel extends React.Component
         if(this.state.send_popup){
             return(<div key="popup" class="full-screen-popup center">
             <div class="login-background">
-                <p class="important big-text">Do you want confirm {this.state.loaded_user.name+" "+this.state.loaded_user.surname}?</p>
+                <p class="important big-text">Do you want to confirm {this.state.loaded_user != undefined? this.state.loaded_user.name+" "+this.state.loaded_user.surname:""} as maker?</p>
                 <form id={"confirmUserForm"} action={'#'} method={"POST"} class="inline-block">
                     <p class="small-text">ADMIN LOGIN:</p><input type={"text"} name={"login"}></input>
                     <p class="small-text">ADMIN PASSWORD:</p><input type={"password"} name={"password"}></input>
                 </form>
                 <a onClick={(event)=>this.confirmUser()} class="button6 inline-block button-confirm-user" href="#">{"CONFIRM USER"}</a>
-                <a onClick={(event)=>this.setState({send_popup: false})} class="button6 inline-block button-close-panel" href="#">{"CLOSE PANEL"}</a>
+                <a onClick={(event)=>this.setState({send_popup: false, logon_failed: false, success_animation: false})} class="button6 inline-block button-close-panel" href="#">{"CLOSE PANEL"}</a>
+                {this.state.logon_failed?<p class="big-text important">INCORRECT LOGIN</p>:[]}
             </div>
             </div>)
         }
@@ -293,6 +294,8 @@ class ConfirmationPanel extends React.Component
                     {panel}
                     </div>:<div></div>
                 }
+                </ReactCSSTransitionGroup>
+                <ReactCSSTransitionGroup transitionName={this.state.success_animation?"correct_logon":"simple"} transitionEnterTimeout={500} transitionLeaveTimeout={500}>
                 {this.state.send_popup?send_popup:<div></div>}
                 </ReactCSSTransitionGroup>
                 
