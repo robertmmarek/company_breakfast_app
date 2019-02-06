@@ -130,19 +130,19 @@ table.user-navigation
 table.user-navigation td.left{
     text-align: center;
     vertical-align: center;
-    width: 20%;
+    width: 15%;
 }
 
 table.user-navigation td.middle{
     text-align: center;
     vertical-align: center;
-    width: 60%;
+    width: 70%;
 }
 
 table.user-navigation td.right{
     text-align: center;
     vertical-align: center;
-    width: 20%;
+    width: 15%;
 }
 
 table.user-preview
