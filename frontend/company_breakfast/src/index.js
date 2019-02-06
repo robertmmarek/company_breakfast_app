@@ -44,7 +44,7 @@ class App extends React.Component
     render()
     {
         return(
-            <div>
+            <div class="main-div">
                 <CurrentBreakfast />
                 <UserQueue />
                 <ConfirmationPanel />
@@ -212,23 +212,6 @@ class ConfirmationPanel extends React.Component
         let ret_stack = [];
         if(this.state.activated)
         {
-            /*
-            if(this.state.current_selection > 0){
-                ret_stack.push(<a key="decrement-button" href="#" onClick={(data)=>this.changeSelection(true)} class="button6 float-left">{"decrement"}</a>);
-            } 
-            
-            if(this.state.loading_user || this.state.loaded_user == undefined)
-            {
-                ret_stack.push(<div class="loading float-left">{"loading_user"}</div>)
-            }else if(this.state.loaded_user != undefined){
-                ret_stack.push(<div class="float-left">{this.state.loaded_user.name+" "+this.state.loaded_user.surname+" "+this.state.loaded_user.queue_count}</div>)
-            }
-
-            ret_stack.push(<a key="increment-button" href="#" onClick={(data)=>this.changeSelection()} class="button6 float-left">{"increment"}</a>);
-            ret_stack.push(<a key="send-confirmation-button" href="#" onClick={(event)=>this.setState({send_popup: true})} class="button6 new-line">
-                                           {"SEND CONFIRMATION"}
-                                            </a>);
-            */
            return(<div class="confirmation-panel-div">
            <div class="center">
            <table class="user-navigation">
@@ -276,13 +259,16 @@ class ConfirmationPanel extends React.Component
     managePopup()
     {
         if(this.state.send_popup){
-            return(<div>
-                <form id={"confirmUserForm"} action={`http://127.0.0.1:5000/attach_person_from_queue_to_brakfast/${this.state.current_selection}`} method={"POST"}>
-                    <input type={"text"} name={"login"}></input>
-                    <input type={"password"} name={"password"}></input>
+            return(<div key="popup" class="full-screen-popup center">
+            <div class="login-background">
+                <p class="important big-text">Do you want confirm {this.state.loaded_user.name+" "+this.state.loaded_user.surname}?</p>
+                <form id={"confirmUserForm"} action={'#'} method={"POST"} class="inline-block">
+                    <p class="small-text">ADMIN LOGIN:</p><input type={"text"} name={"login"}></input>
+                    <p class="small-text">ADMIN PASSWORD:</p><input type={"password"} name={"password"}></input>
                 </form>
-                <button onClick={(event)=>this.confirmUser()}>{"CONFIRM USER"}</button>
-                <button onClick={(event)=>this.setState({send_popup: false})}>{"CLOSE PANEL"}</button>
+                <a onClick={(event)=>this.confirmUser()} class="button6 inline-block button-confirm-user" href="#">{"CONFIRM USER"}</a>
+                <a onClick={(event)=>this.setState({send_popup: false})} class="button6 inline-block button-close-panel" href="#">{"CLOSE PANEL"}</a>
+            </div>
             </div>)
         }
         else{
@@ -307,9 +293,9 @@ class ConfirmationPanel extends React.Component
                     {panel}
                     </div>:<div></div>
                 }
-                
-                </ReactCSSTransitionGroup>
                 {this.state.send_popup?send_popup:<div></div>}
+                </ReactCSSTransitionGroup>
+                
             </div>
         );
     }
