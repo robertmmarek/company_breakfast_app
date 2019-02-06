@@ -1,3 +1,15 @@
+td{
+    font-family: Impact;
+    font-size: 12;
+}
+
+th{
+    font-family: Impact;
+    font-size: 15;
+    font-weight: bold;
+    color: #f94e1a;
+}
+
 .simple-enter{
     opacity: 0.01;
 }
@@ -111,25 +123,26 @@ table.user-navigation
     margin-top:15px;
     table-layout: fixed;
     display: inline-table;
-    width: 80%;
+    width: 100%;
+    height: 100px;
 }
 
 table.user-navigation td.left{
     text-align: center;
     vertical-align: center;
-    width: 10%;
+    width: 20%;
 }
 
 table.user-navigation td.middle{
     text-align: center;
     vertical-align: center;
-    width: 80%;
+    width: 60%;
 }
 
 table.user-navigation td.right{
     text-align: center;
     vertical-align: center;
-    width: 10%;
+    width: 20%;
 }
 
 table.user-preview
@@ -150,7 +163,7 @@ table.user-preview th
 {
     text-align: center;
     vertical-align: center;
-    border-bottom: 1px solid;
+    border-bottom: 1px solid black;
     width:50%;
 
 }
@@ -170,7 +183,7 @@ table.user-preview th
 
 .queue-table th
 {
-    border-bottom: 1px solid;
+    border-bottom: 1px solid black;
     padding: 0px;
     text-align: center;
     vertical-align: center;
@@ -179,7 +192,7 @@ table.user-preview th
 
 .queue-table td
 {
-    border-bottom: 1px solid;
+    border-bottom: 1px solid black;
     padding: 0px;
     text-align: center;
     vertical-align: center;
@@ -233,16 +246,25 @@ table.user-preview th
     text-align:center;
     position:relative;
 }
-a.button6:active{
+span.button6:active{
     top:0.1em;
+}
+
+span.button6:hover{
+    cursor: pointer;
 }
 
 .important{
     color:#f94e1a;
 }
 
+.very-big-text{
+    font-size: 30px;
+    font-family: impact;
+}
+
 .left-user-selection-button{
-    width:5%;
+    
     min-height: 1px;
     margin-left: 0;
     margin-right: 0;
@@ -250,7 +272,7 @@ a.button6:active{
 }
 
 .right-user-selection-button{
-    width:5%;
+    
     min-height: 1px;
     margin-left: 0;
     margin-right: 0;
@@ -286,10 +308,26 @@ a.button6:active{
 
 .button-confirm-user{
     margin-top: 5%;
+    margin-bottom: 5%;
 }
 
 .button-close-panel{
-    width: 20%;
+    width: 15%;
+}
+
+.no-margin-top{
+    margin-top: 0;
+}
+
+.small-bottom-margin{
+    margin-bottom: 5px;
+}
+
+.upper-bar-div{
+    background: black;
+    height: 3%;
+    width:100%;
+    text-align: right;
 }
 
   

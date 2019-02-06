@@ -44,6 +44,7 @@ class App extends React.Component
     render()
     {
         return(
+           
             <div class="main-div">
                 <CurrentBreakfast />
                 <UserQueue />
@@ -83,14 +84,14 @@ class CurrentBreakfast extends React.Component
         return(
             <div class={"next-breakfast-div"}>
                 <ReactCSSTransitionGroup transitionName="simple" transitionEnterTimeout={500} transitionLeaveTimeout={300}>
-                <p class={"big-text"}>{"Next breakfast date: "}</p>
+                <p class={"big-text small-bottom-margin"}>{"Next breakfast date: "}</p>
                 {this.state.breakfastDate != ''?
-                <p class={"medium-text important"} key="date">{this.state.breakfastDate}</p>
+                <p class={"very-big-text important no-margin-top"} key="date">{this.state.breakfastDate}</p>
                 :<p></p>
                 }
-                <p class={"big-text"}>{"Will make: "}</p>
+                <p class={"big-text small-bottom-margin"}>{"Will make: "}</p>
                 {this.state.breakfastMaker != ''?
-                <p class={"medium-text important"} key="user">{this.state.breakfastMaker}</p>
+                <p class={"very-big-text important no-margin-top"} key="user">{this.state.breakfastMaker}</p>
                 :<p></p>
                 }
                 </ReactCSSTransitionGroup>
@@ -217,10 +218,12 @@ class ConfirmationPanel extends React.Component
            <table class="user-navigation">
                 <tr>
                     <td class="left">
+                    <ReactCSSTransitionGroup transitionName="simple" transitionEnterTimeout={1000} transitionLeaveTimeout={500}>
                         {(this.state.current_selection > 0) ? 
-                            <a key="decrement-button" href="#" onClick={(data)=>this.changeSelection(true)} class="left-user-selection-button button6">{"-"}</a>
+                            <span key="decrement-button" href="#" onClick={(data)=>this.changeSelection(true)} class="left-user-selection-button button6">{"<<"}</span>
                             :<div class="left-user-selection-button"></div>
                         }
+                    </ReactCSSTransitionGroup>
                     </td>
                     <td class="middle">
                         <table class="user-preview">
@@ -241,14 +244,14 @@ class ConfirmationPanel extends React.Component
                         </table>
                     </td>
                     <td class="right">
-                        <a key="increment-button" href="#" onClick={(data)=>this.changeSelection()} class="right-user-selection-button button6">{"+"}</a>
+                        <span key="increment-button" href="#" onClick={(data)=>this.changeSelection()} class="right-user-selection-button button6">{">>"}</span>
                     </td>
                 </tr>
             </table>
             </div>
-                    <a key="send-confirmation-button" href="#" onClick={(event)=>this.setState({send_popup: true, success_animation: false})} class="new-line button6">
+                    <span key="send-confirmation-button" href="#" onClick={(event)=>this.setState({send_popup: true, success_animation: false})} class="new-line button6">
                         {"SEND CONFIRMATION"}
-                    </a>
+                    </span>
                 </div>
            );
         }
@@ -261,13 +264,15 @@ class ConfirmationPanel extends React.Component
         if(this.state.send_popup){
             return(<div key="popup" class="full-screen-popup center">
             <div class="login-background">
-                <p class="important big-text">Do you want to confirm {this.state.loaded_user != undefined? this.state.loaded_user.name+" "+this.state.loaded_user.surname:""} as maker?</p>
+                <div class="upper-bar-div">
+                    <span onClick={(event)=>this.setState({send_popup: false, logon_failed: false, success_animation: false})} class="button6 inline-block button-close-panel" href="#">{"close"}</span>
+                </div>
+                <p class="important very-big-text">Do you want to confirm <br/>{this.state.loaded_user != undefined? this.state.loaded_user.name+" "+this.state.loaded_user.surname:""}<br/> as maker?</p>
                 <form id={"confirmUserForm"} action={'#'} method={"POST"} class="inline-block">
-                    <p class="small-text">ADMIN LOGIN:</p><input type={"text"} name={"login"}></input>
-                    <p class="small-text">ADMIN PASSWORD:</p><input type={"password"} name={"password"}></input>
+                    <p class="small-text small-bottom-margin">ADMIN LOGIN:</p><input type={"text"} name={"login"}></input>
+                    <p class="small-text small-bottom-margin">ADMIN PASSWORD:</p><input type={"password"} name={"password"}></input>
                 </form>
-                <a onClick={(event)=>this.confirmUser()} class="button6 inline-block button-confirm-user" href="#">{"CONFIRM USER"}</a>
-                <a onClick={(event)=>this.setState({send_popup: false, logon_failed: false, success_animation: false})} class="button6 inline-block button-close-panel" href="#">{"CLOSE PANEL"}</a>
+                <span onClick={(event)=>this.confirmUser()} class="button6 inline-block button-confirm-user" href="#">{"CONFIRM USER"}</span>
                 {this.state.logon_failed?<p class="big-text important">INCORRECT LOGIN</p>:[]}
             </div>
             </div>)
@@ -285,9 +290,9 @@ class ConfirmationPanel extends React.Component
 
         return(
             <div class="confirmation-panel-show-button-div">
-                <a href="#" onClick={(event)=>this.setState({activated: !this.state.activated})} class="button6">
+                <span href="#" onClick={(event)=>this.setState({activated: !this.state.activated})} class="button6">
                 {this.state.activated?"hide confirmation panel":"show confirmation panel"}
-                </a>
+                </span>
                 <ReactCSSTransitionGroup transitionName="simple" transitionEnterTimeout={1000} transitionLeaveTimeout={500}>
                 {this.state.activated ? 
                     <div key={"panel"}>
