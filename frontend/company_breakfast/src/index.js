@@ -231,10 +231,15 @@ class ConfirmationPanel extends React.Component
             */
            return(<div class="confirmation-panel-div">
            <div class="center">
+           <table class="user-navigation">
+                <tr>
+                    <td class="left">
                         {(this.state.current_selection > 0) ? 
-                            <a key="decrement-button" href="#" onClick={(data)=>this.changeSelection(true)} class="button6 left-user-selection-button">{"-"}</a>
+                            <a key="decrement-button" href="#" onClick={(data)=>this.changeSelection(true)} class="left-user-selection-button button6">{"-"}</a>
                             :<div class="left-user-selection-button"></div>
                         }
+                    </td>
+                    <td class="middle">
                         <table class="user-preview">
                         <tr>
                             <th>name</th>
@@ -251,8 +256,13 @@ class ConfirmationPanel extends React.Component
                             </tr>
                         }
                         </table>
-                        <a key="increment-button" href="#" onClick={(data)=>this.changeSelection()} class="button6 right-user-selection-button">{"+"}</a>
-                    </div>
+                    </td>
+                    <td class="right">
+                        <a key="increment-button" href="#" onClick={(data)=>this.changeSelection()} class="right-user-selection-button button6">{"+"}</a>
+                    </td>
+                </tr>
+            </table>
+            </div>
                     <a key="send-confirmation-button" href="#" onClick={(event)=>this.setState({send_popup: true})} class="new-line button6">
                         {"SEND CONFIRMATION"}
                     </a>

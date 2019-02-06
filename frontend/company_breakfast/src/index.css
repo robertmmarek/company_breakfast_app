@@ -70,6 +70,7 @@ body{
 
 .inline-block{
     display: inline-block;
+    width: 80%;
 }
 
 .float-left{
@@ -80,17 +81,52 @@ body{
     clear: both;
 }
 
+table.user-navigation
+{
+    table-layout: fixed;
+    display: inline-table;
+    width: 80%;
+}
+
+table.user-navigation td.left{
+    text-align: center;
+    vertical-align: center;
+    width: 10%;
+}
+
+table.user-navigation td.middle{
+    text-align: center;
+    vertical-align: center;
+    width: 80%;
+}
+
+table.user-navigation td.right{
+    text-align: center;
+    vertical-align: center;
+    width: 10%;
+}
+
 table.user-preview
 {
     border-collapse: collapse;
-    width: 40%;
-    margin-bottom:2%;
-    display: inline-block;
+    border:1px solid;
+    table-layout: fixed;
+    width:100%;
 }
 
-table.user-preview td
+table.user-preview td 
 {
-    width:60%;
+    text-align: center;
+    vertical-align: center;
+}
+
+table.user-preview th 
+{
+    text-align: center;
+    vertical-align: center;
+    border-bottom: 1px solid;
+    width:50%;
+
 }
 
 .queue-table
@@ -151,6 +187,7 @@ table.user-preview td
     margin: 0 auto;
     min-height: 1px;
     text-align: center;
+    width:100%;
 }
 
 .button6{
@@ -179,18 +216,18 @@ a.button6:active{
 
 .left-user-selection-button{
     width:5%;
-    display: inline-block;
     min-height: 1px;
     margin-left: 0;
     margin-right: 0;
+    vertical-align: middle;
 }
 
 .right-user-selection-button{
     width:5%;
-    display: inline-block;
     min-height: 1px;
     margin-left: 0;
     margin-right: 0;
+    vertical-align: middle;
 }
 /* 
 #f94e1a
