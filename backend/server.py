@@ -70,6 +70,7 @@ def confirm_breakfast(which_one):
     user = sq3ut.get_next_maker(cursor, omit=which_one)
     if correct_logon:
         sq3ut.confirm_user_breakfast(cursor, user, breakfast)
+        sq3ut.cleanup_breakfasts(cursor, buffer=12)
 
     close_connection_to_db(conn)
 
