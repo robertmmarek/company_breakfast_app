@@ -82,7 +82,7 @@ class CurrentBreakfast extends React.Component
     {
         return(
             <div class={"next-breakfast-div"}>
-                <ReactCSSTransitionGroup transitionName="simple" transitionEnterTimeout={1000} transitionLeaveTimeout={300}>
+                <ReactCSSTransitionGroup transitionName="simple" transitionEnterTimeout={500} transitionLeaveTimeout={300}>
                 <p class={"big-text"}>{"Next breakfast date: "}</p>
                 {this.state.breakfastDate != ''?
                 <p class={"medium-text important"} key="date">{this.state.breakfastDate}</p>

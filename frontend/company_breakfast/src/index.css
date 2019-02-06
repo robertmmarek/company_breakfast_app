@@ -28,7 +28,7 @@
 }
 
 body{
-    background-image: url("./img/background.png");
+    background-image: url("./img/big_background.jpg");
 }
 
 .main-div{
@@ -165,7 +165,7 @@ table.user-preview th
 
 .queue-table tr:hover
 {
-    background-color: #f595dd;
+    background-color: #f94e1a;
 }
 
 .queue-table th
@@ -238,7 +238,7 @@ a.button6:active{
 }
 
 .important{
-    color: red;
+    color:#f94e1a;
 }
 
 .left-user-selection-button{
