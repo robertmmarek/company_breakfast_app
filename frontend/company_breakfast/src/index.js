@@ -10,7 +10,7 @@ class EventSingleton
     {
         if(!EventSingleton.instance)
         {
-            this.EVENTS = {BREAKFAST_CYCLIC_UPDATE: undefined, LOGON_FAILED: undefined, LOGON_CORRECT: undefined};
+            this.EVENTS = {BREAKFAST_CYCLIC_UPDATE: undefined, LOGON_FAILED: undefined, LOGON_CORRECT: undefined, FAILED_ACTION_AUTH: undefined};
             Object.keys(this.EVENTS).forEach(element => {
                 let customEvent = new CustomEvent(element);
                 this.EVENTS[element] = customEvent;
@@ -38,7 +38,26 @@ class App extends React.Component
     constructor(props)
     {
         super(props);
+        this.state = {showLoginPopup: false, showLoginFailed: false, showSuccessfulLogin: false, showAdminPanel: false};
+
         let eventSingleton = new EventSingleton();
+        eventSingleton.subscribeToEvent('FAILED_ACTION_AUTH', (data)=>this.setState({showLoginPopup: true, showAdminPanel: false}));
+    }
+
+    tryShowAdminPanel()
+    {
+        checkIfLoggedRequest((isLogged)=>{
+            console.log(isLogged);
+            if(isLogged)
+            {
+                this.setState({showAdminPanel: !this.state.showAdminPanel});
+            }
+            else{
+                this.setState({showAdminPanel: false});
+                let eventSingleton = new EventSingleton();
+                eventSingleton.triggerEvent('FAILED_ACTION_AUTH');
+            }
+        });
     }
 
     render()
@@ -48,18 +67,55 @@ class App extends React.Component
             <div class="main-div">
                 <CurrentBreakfast />
                 <UserQueue />
-                <ConfirmationPanel />
+
+                <div class="admin-panel-show-button-div">
+                    <span href="#" onClick={(event)=>this.tryShowAdminPanel()} class="button6">
+                    {this.state.showAdminPanel?"hide admin panel":"show admin panel"}
+                    </span>
+                </div>
+
+                <ReactCSSTransitionGroup transitionName="simple" transitionEnterTimeout={500} transitionLeaveTimeout={500}>
+                {this.state.showAdminPanel?
+                <AdminPanel />
+                :[]
+                }
+                </ReactCSSTransitionGroup>
+
+                <ReactCSSTransitionGroup transitionName={this.state.showSuccessfulLogin?"correct_logon":"simple"} transitionEnterTimeout={500} transitionLeaveTimeout={500}>
+                {this.state.showLoginPopup?
+                <LoginPopup 
+                onLogin={(event)=>this.tryLogin()} 
+                onLoginClose={(event)=>this.setState({showLoginPopup: false, showLoginFailed: false, showSuccessfulLogin: false})}
+                logonFailed={this.state.showLoginFailed}
+                />
+                :[]
+                }
+                </ReactCSSTransitionGroup>
             </div>
         );
+    }
+
+    tryLogin()
+    {
+        let login_form = document.getElementById('login-form');
+        let login = login_form.login.value;
+        let password = login_form.password.value;
+        loginRequest((isSuccess)=>{
+            if(isSuccess)
+            {
+                this.setState({showLoginFailed: false, showSuccessfulLogin: true, showLoginPopup: false});
+            }else{
+                this.setState({showLoginFailed: true, showSuccessfulLogin: false});
+            }
+        }, login, password)
     }
 }
 
 
 class CurrentBreakfast extends React.Component
 {
-    updateBreakfastState(responseText)
+    updateBreakfastState(json)
     {
-        let json = JSON.parse(responseText);
         let temp_state = this.state;
 
         temp_state.breakfastDate = json.date;
@@ -75,8 +131,8 @@ class CurrentBreakfast extends React.Component
     {
         super(props);
         this.state = {breakfastDate: '', breakfastMaker: ''};
-        breakfastRequest((text)=>this.updateBreakfastState(text));
-        setInterval(()=>(breakfastRequest((text)=>this.updateBreakfastState(text))), 200);
+        breakfastRequest((json)=>this.updateBreakfastState(json));
+        setInterval(()=>(breakfastRequest((json)=>this.updateBreakfastState(json))), 200);
     }
 
     render()
@@ -106,8 +162,7 @@ class UserQueue extends React.Component
     {
         for(let i = 0; i < this.state.queue.length; i++)
         {
-            queueRequest((jsonText)=>{
-                let json = JSON.parse(jsonText);
+            queueRequest((json)=>{
                 let temp_state = this.state;
                 temp_state.queue[i] = {name: json.name+" "+json.surname, done_already: json.queue_count};
                 this.setState(temp_state);
@@ -178,8 +233,7 @@ class ConfirmationPanel extends React.Component
         let form_to_send = document.getElementById('confirmUserForm');
         let login = form_to_send.login.value;
         let password = form_to_send.password.value;
-        confirmUserRequest((text)=>{
-            let json = JSON.parse(text);
+        confirmUserRequest((json)=>{
             let eventSingleton = new EventSingleton();
             if(json.correct_logon)
             {
@@ -194,8 +248,7 @@ class ConfirmationPanel extends React.Component
     reloadUser(new_selection=undefined)
     {
         this.setState({loaded_user: undefined, loading_user: true, current_selection: new_selection!=undefined?new_selection:this.state.current_selection});
-        queueRequest((text)=>{
-            let json = JSON.parse(text);
+        queueRequest((json)=>{
             this.setState({loaded_user: json, loading_user: false});
         }, new_selection!=undefined? new_selection : this.state.current_selection)
     }
@@ -309,45 +362,135 @@ class ConfirmationPanel extends React.Component
     }
 }
 
+class AdminPanel extends React.Component
+{
+    constructor(props)
+    {
+        super(props);
+    }
+
+
+    render()
+    {
+        return(
+            <div key="admin-panel">
+                <div class="admin-panel-div">
+                    DIV
+                </div>
+            </div>
+        );
+    }
+}
+
+
+/*
+*/
+class LoginPopup extends React.Component
+{
+    constructor(props)
+    {
+        super(props);
+        this.state = {}
+    }
+
+    render()
+    {
+        return(
+        <div class="full-screen-popup" key={"full-screen-popup"}>
+            <div class="login-background">
+                <div class="upper-bar-div">
+                    <span onClick={this.props.onLoginClose} class="button6 inline-block button-close-panel" href="#">{"close"}</span>
+                </div>
+                <form id={"login-form"} method="POST" action="#">
+                    <p class="small-text small-bottom-margin">ADMIN LOGIN:</p><input type={"text"} name={"login"}></input>
+                    <p class="small-text small-bottom-margin">ADMIN PASSWORD:</p><input type={"password"} name={"password"}></input>
+                    <span onClick={this.props.onLogin} class="button6 inline-block button-confirm-user" href="#">{"LOGIN"}</span>
+                    {this.props.logonFailed?<p class="big-text important">INCORRECT LOGIN</p>:[]}
+                </form>
+            </div>
+        </div>);
+    }
+}
+
 
 function breakfastRequest(callback)
 {
-    let req = new XMLHttpRequest();
-    req.open('GET', "http://127.0.0.1:5000/current_breakfast", true);
-    req.onloadend = (event) => {
-        if (req.readyState == 4 && req.status == 200)
-        {
-            callback(req.responseText);
-        }
-    }
-    req.send();
+    let url = "http://localhost:5000/current_breakfast";
+    sendGETRequestAndReturnJSON(url, callback);
 }
 
 function queueRequest(callback, which_one=0)
 {
-    let req = new XMLHttpRequest();
-    req.open('GET', `http://127.0.0.1:5000/${which_one}_in_making_queue`, true);
-    req.onloadend = (event) => {
-        if(req.readyState == 4 && req.status == 200)
-        {
-            callback(req.responseText);
-        }
-    }
-    req.send();
+    let url = `http://localhost:5000/${which_one}_in_making_queue`;
+    sendGETRequestAndReturnJSON(url, callback);
+}
+
+function checkIfLoggedRequest(callback)
+{
+    let url = 'http://localhost:5000/is_admin_logged';
+    sendGETRequestAndReturnJSON(url, callback, (json)=>('correct_logon' in json)?json['correct_logon']:false);
+}
+
+function loginRequest(callback, login, password)
+{
+    let url = 'http://localhost:5000/admin_login';
+    sendPOSTRequestAndReturnJSON(url, {login: login, password: password}, callback, (json)=>('correct_logon' in json)?json['correct_logon']:false);
+}
+
+function addUserRequest(callback, name, surname, how_many_breakfast_made=0)
+{
+    let url = 'http://localhost:5000/add_user';
+    sendPOSTRequestAndReturnJSON(url, {name: name, 
+        surname: surname, 
+        breakfasts_done: how_many_breakfast_made}, 
+        callback, 
+        (json)=>('success' in json)?json['success']:false);
+}
+
+function logoutRequest(callback)
+{
+    let url = 'http://localhost:5000/admin_logout';
+    sendPOSTRequestAndReturnJSON(url, {}, callback, (json)=>('correct_logon' in json)?json['correct_logon']:false);
 }
 
 function confirmUserRequest(callback, login, password, which_one=0)
 {
+    let url = `http://localhost:5000/attach_person_from_queue_to_brakfast/${which_one}`;
+    sendPOSTRequestAndReturnJSON(url, {login: login, password: password}, callback);
+}
+
+function sendPOSTRequestAndReturnJSON(request_url, post_data, callback, json_processing=(json)=>json)
+{
     let req = new XMLHttpRequest();
-    req.open('POST', `http://127.0.0.1:5000/attach_person_from_queue_to_brakfast/${which_one}`, true);
+    req.open('POST', request_url, true)
     req.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     req.onloadend = (event) => {
-        if(req.readyState == 4 && req.status == 200){
-            callback(req.responseText);
+        if(req.readyState == 4 && req.status == 200)
+        {
+            let json = JSON.parse(req.responseText);
+            callback(json_processing(json));
         }
     }
-    let post_data = `login=${login}&password=${password}`;
-    req.send(post_data);
+    let post_data_string = '';
+    let keys = Object.keys(post_data)
+    keys.forEach((key, index)=>{
+        post_data_string += `${key}=${post_data[key]}` +  String((index != (keys.length-1))?"&":"");
+    })
+    req.send(post_data_string);
+}
+
+function sendGETRequestAndReturnJSON(request_url, callback, json_processing=(json)=>json)
+{
+    let req = new XMLHttpRequest();
+    req.open('GET', request_url, true)
+    req.onloadend = (event) => {
+        if(req.readyState == 4 && req.status == 200)
+        {
+            let json = JSON.parse(req.responseText);
+            callback(json_processing(json));
+        }
+    }
+    req.send();
 }
 
 ReactDOM.render(<App />, document.getElementById('root'));

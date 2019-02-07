@@ -74,7 +74,12 @@ body{
     margin-top: 2%; 
 }
 
-.confirmation-panel-show-button-div
+.show-admin-panel-button
+{
+    margin-top: 2%;
+}
+
+.admin-panel-show-button-div
 {
     border: 0px;
     background-color: rgba(255, 255, 255, 0.0);
@@ -84,6 +89,21 @@ body{
     width: 100%;
     margin: 0 auto;
     margin-top: 2%; 
+}
+
+.admin-panel-div{
+    border: 5px solid #482c10;
+    background-color: rgba(255, 255, 255, 0.9);
+    text-align: center;
+    align-items: center;
+    opacity: 1.0;
+    border-radius: 13px;
+    padding-top: 1%;
+    padding-bottom: 1%;
+    overflow: auto;
+    width:40%;
+    margin: 0 auto;
+    margin-top: 2%;
 }
 
 .confirmation-panel-div{ 
