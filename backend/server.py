@@ -4,7 +4,7 @@ import datetime
 import json
 import sqlite3_util as sq3ut
 
-from flask import Flask, request
+from flask import Flask, request, session
 from flask_cors import CORS, cross_origin
 
 DATABASE = os.path.normpath("./database/breakfast.db")
@@ -18,10 +18,17 @@ def close_connection_to_db(conn):
     conn.commit()
     conn.close()
 
+def login_update():
+    is_logged = False if not session.get('logged_in') else session['logged_in']
+    if is_logged:
+        session.modified = True
+
 
 cursor = sqlite3.connect(DATABASE)
 
 app = Flask(__name__)
+app.secret_key = os.urandom(16)
+app.permanent_session_lifetime = datetime.timedelta(minutes=15)
 CORS(app)
 
 @app.route('/current_breakfast', methods=['GET'])
@@ -75,7 +82,89 @@ def confirm_breakfast(which_one):
     close_connection_to_db(conn)
 
     return json.dumps({'correct_logon': True}) if correct_logon else json.dumps({'correct_logon': False})
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                
+
+@app.route('/admin_login', methods=['POST'])
+@cross_origin()
+def admin_login():
+    login = ''
+    password = ''
+    try:
+        login = request.form['login']
+        password = request.form['password']
+    except Exception as e:
+        print(e)
+
+    correct_logon = False
+
+    conn, cursor = connect_to_db()
+    correct_logon = sq3ut.verify_admin(cursor, sq3ut.create_admin(login, password))
+
+    if correct_logon:
+        session['logged_in'] = True
+        session.pernament = True
+
+    close_connection_to_db(conn)
+
+    return json.dumps({'correct_logon': True}) if correct_logon else json.dumps({'correct_logon': False})
+
+@app.route('/is_admin_logged', methods=['GET'])
+@cross_origin()
+def is_admin_logged():
+    is_logged = False if 'logged_in' not in session else session['logged_in']
+    return json.dumps({'correct_logon': is_logged})
+
+@app.route('/admin_logout', methods=['GET'])
+@cross_origin()
+def admin_logout():
+    session['logged_in'] = False
+    return json.dumps({'correct_logon': False}) 
+
+
+@app.route('/add_user', methods=['GET'])
+@cross_origin()
+def add_user():
+    login_update()
+    success = False
+    
+    if session.get('logged_in') and all([key in request.args for key in ['name', 'surname', 'breakfasts_done']]):
+        name = request.args['name']
+        surname = request.args['surname']
+        breakfasts_done = int(request.args['breakfasts_done']) if request.args['breakfasts_done'].isdigit() else 0
+
+        conn, cursor = connect_to_db()
+        try:
+            sq3ut.add_user(cursor, sq3ut.create_user(name, surname, breakfasts_done))
+        except Exception as e:
+            success = False
+        else:
+            success = True     
+
+        close_connection_to_db(conn) 
+
+    return json.dumps({'success': success})    
+
+
+@app.route('/add_admin', methods=['POST'])
+@cross_origin()
+def add_admin():
+    login_update()
+    success = False
+    
+    if session.get('logged_in') and all([key in request.form for key in ['login', 'password']]):
+        login = request.form['login']
+        password = request.form['password']
+
+        conn, cursor = connect_to_db()
+        try:
+            sq3ut.add_admin(cursor, sq3ut.create_admin(login, password))
+        except Exception as e:
+            success = False
+        else:
+            success = True     
+
+        close_connection_to_db(conn) 
+
+    return json.dumps({'success': success})     
 
 
 
