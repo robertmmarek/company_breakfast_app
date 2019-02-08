@@ -4,7 +4,7 @@ import datetime
 import json
 import sqlite3_util as sq3ut
 
-from flask import Flask, request, session
+from flask import Flask, request, session, make_response
 from flask_cors import CORS, cross_origin
 
 DATABASE = os.path.normpath("./database/breakfast.db")
@@ -23,13 +23,18 @@ def login_update():
     if is_logged:
         session.modified = True
 
+def make_accessible_from_javascript(text_response):
+    response = make_response(text_response)
+    response.headers['Access-Control-Allow-Credentials'] = 'true'
+    return response
+
 
 cursor = sqlite3.connect(DATABASE)
 
 app = Flask(__name__)
 app.secret_key = os.urandom(16)
 app.permanent_session_lifetime = datetime.timedelta(minutes=15)
-CORS(app)
+CORS(app, support_credentials=True)
 
 @app.route('/current_breakfast', methods=['GET'])
 @cross_origin()
@@ -46,7 +51,7 @@ def current_breakfast():
         close_connection_to_db(conn)
         nearest_breakfast.pop('hash')
 
-        return json.dumps(nearest_breakfast)
+        return make_accessible_from_javascript(json.dumps(nearest_breakfast))
 
 @app.route('/<int:to_omit>_in_making_queue', methods=['GET'])
 @cross_origin()
@@ -55,7 +60,22 @@ def next_maker(to_omit):
         conn, cursor = connect_to_db()
         next_maker = sq3ut.get_next_maker(cursor, omit=to_omit)
         close_connection_to_db(conn)
-        return json.dumps(next_maker)
+
+        return make_accessible_from_javascript(json.dumps(next_maker))
+
+@app.route('/get_first_<int:how_many>_in_making_queue', methods=['GET'])
+@cross_origin()
+def get_first_x_in_making_queue(how_many):
+    if request.method == "GET":
+        conn, cursor = connect_to_db()
+
+        makers = []
+        for i in range(how_many):
+            makers.append(sq3ut.get_next_maker(cursor, omit=i))
+        
+        close_connection_to_db(conn)
+
+        return make_accessible_from_javascript(json.dumps({'queue': makers}))
 
 @app.route('/attach_person_from_queue_to_brakfast/<int:which_one>', methods=['POST'])
 @cross_origin()
@@ -81,7 +101,7 @@ def confirm_breakfast(which_one):
 
     close_connection_to_db(conn)
 
-    return json.dumps({'correct_logon': True}) if correct_logon else json.dumps({'correct_logon': False})
+    return make_accessible_from_javascript(json.dumps({'correct_logon': True}) if correct_logon else json.dumps({'correct_logon': False}))
 
 @app.route('/admin_login', methods=['POST'])
 @cross_origin()
@@ -105,19 +125,20 @@ def admin_login():
 
     close_connection_to_db(conn)
 
-    return json.dumps({'correct_logon': True}) if correct_logon else json.dumps({'correct_logon': False})
+    return make_accessible_from_javascript(json.dumps({'correct_logon': True}) if correct_logon else json.dumps({'correct_logon': False}))
 
 @app.route('/is_admin_logged', methods=['GET'])
 @cross_origin()
 def is_admin_logged():
     is_logged = False if 'logged_in' not in session else session['logged_in']
-    return json.dumps({'correct_logon': is_logged})
+    return make_accessible_from_javascript(json.dumps({'correct_logon': is_logged}))
 
 @app.route('/admin_logout', methods=['GET'])
 @cross_origin()
 def admin_logout():
     session['logged_in'] = False
-    return json.dumps({'correct_logon': False}) 
+    return make_accessible_from_javascript(json.dumps({'correct_logon': False}))
+    
 
 
 @app.route('/add_user', methods=['GET'])
@@ -141,7 +162,7 @@ def add_user():
 
         close_connection_to_db(conn) 
 
-    return json.dumps({'success': success})    
+    return make_accessible_from_javascript(json.dumps({'success': success}))   
 
 
 @app.route('/add_admin', methods=['POST'])
@@ -164,7 +185,7 @@ def add_admin():
 
         close_connection_to_db(conn) 
 
-    return json.dumps({'success': success})     
+    return make_accessible_from_javascript(json.dumps({'success': success}))
 
 
 

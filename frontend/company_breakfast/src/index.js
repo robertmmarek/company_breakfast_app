@@ -132,7 +132,7 @@ class CurrentBreakfast extends React.Component
         super(props);
         this.state = {breakfastDate: '', breakfastMaker: ''};
         breakfastRequest((json)=>this.updateBreakfastState(json));
-        setInterval(()=>(breakfastRequest((json)=>this.updateBreakfastState(json))), 200);
+        setInterval(()=>(breakfastRequest((json)=>this.updateBreakfastState(json))), 500);
     }
 
     render()
@@ -160,15 +160,17 @@ class UserQueue extends React.Component
 {
     updateQueue()
     {
-        for(let i = 0; i < this.state.queue.length; i++)
-        {
-            queueRequest((json)=>{
-                let temp_state = this.state;
-                temp_state.queue[i] = {name: json.name+" "+json.surname, done_already: json.queue_count};
-                this.setState(temp_state);
+         queueRequest((json)=>{
+            let temp_state = this.state;
+
+            for(let i=0; i<json.queue.length; i++)
+            {
+                temp_state.queue[i] = {name: json.queue[i].name+" "+json.queue[i].surname, done_already: json.queue[i].queue_count};
             }
-            ,i);
+            this.setState(temp_state);
         }
+        ,this.state.queue.length);
+        
     }
 
     constructor(props)
@@ -419,9 +421,9 @@ function breakfastRequest(callback)
     sendGETRequestAndReturnJSON(url, callback);
 }
 
-function queueRequest(callback, which_one=0)
+function queueRequest(callback, how_many=0)
 {
-    let url = `http://localhost:5000/${which_one}_in_making_queue`;
+    let url = `http://localhost:5000/get_first_${how_many}_in_making_queue`;
     sendGETRequestAndReturnJSON(url, callback);
 }
 
@@ -463,6 +465,7 @@ function sendPOSTRequestAndReturnJSON(request_url, post_data, callback, json_pro
 {
     let req = new XMLHttpRequest();
     req.open('POST', request_url, true)
+    req.withCredentials = true;
     req.setRequestHeader('Content-type', 'application/x-www-form-urlencoded');
     req.onloadend = (event) => {
         if(req.readyState == 4 && req.status == 200)
@@ -482,6 +485,7 @@ function sendPOSTRequestAndReturnJSON(request_url, post_data, callback, json_pro
 function sendGETRequestAndReturnJSON(request_url, callback, json_processing=(json)=>json)
 {
     let req = new XMLHttpRequest();
+    req.withCredentials = true;
     req.open('GET', request_url, true)
     req.onloadend = (event) => {
         if(req.readyState == 4 && req.status == 200)
