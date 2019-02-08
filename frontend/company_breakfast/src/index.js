@@ -218,7 +218,7 @@ class AdminPanel extends React.Component
     constructor(props)
     {
         super(props);
-        this.state = {popupsVisibility:{confirmUser: false, addUser: false}};
+        this.state = {popupsVisibility:{confirmUser: false, addUser: false}, showSuccess: false};
 
         let eventSingleton = new EventSingleton();
         eventSingleton.subscribeToEvent('FAILED_ACTION_AUTH', (data)=>{
@@ -226,18 +226,18 @@ class AdminPanel extends React.Component
         });
     }
 
-    setPopupVisibility(which, value)
+    setPopupVisibility(which, value, success=false)
     {
         let popups = this.state.popupsVisibility;
         popups[which] = value;
-        this.setState({popupsVisibility: popups});
+        this.setState({popupsVisibility: popups, showSuccess: success});
     }
 
-    hideAllPopups()
+    hideAllPopups(success=false)
     {
         let popups = this.state.popupsVisibility;
         Object.keys(popups).forEach((key, index)=>popups[key]=false);
-        this.setState({popupsVisibility: popups});
+        this.setState({popupsVisibility: popups, showSuccess: success});
     }
 
     tryToShowPopup(which)
@@ -253,10 +253,27 @@ class AdminPanel extends React.Component
                     <span onClick={(event)=>this.tryToShowPopup('confirmUser')} class="button6 inline-block small-bottom-margin" href="#">{"SELECT BREAKFAST MAKER"}</span>
                     <span onClick={(event)=>this.tryToShowPopup('addUser')} class="button6 inline-block small-bottom-margin" href="#">{"ADD USER"}</span>
                 </div>
-                <ReactCSSTransitionGroup transitionName="simple" transitionEnterTimeout={500} transitionLeaveTimeout={300}>
-                    {this.state.popupsVisibility.confirmUser?<ConfirmUserPopup onPopupClose={(data)=>this.hideAllPopups()} />:[]}
+                <ReactCSSTransitionGroup transitionName={this.state.showSuccess?"correct_logon":"simple"} transitionEnterTimeout={500} transitionLeaveTimeout={300}>
+                    {this.state.popupsVisibility.confirmUser?
+                    <ConfirmUserPopup onSuccess={(data)=>this.hideAllPopups(true)} onPopupClose={(data)=>this.hideAllPopups()} />
+                    :[]}
                 </ReactCSSTransitionGroup>
             </div>
+        );
+    }
+}
+
+class AddUserPopup extends React.Component
+{
+    constructor(props)
+    {
+        super(props);
+    }
+
+    render()
+    {
+        return(
+        <div></div>
         );
     }
 }
@@ -293,7 +310,7 @@ class ConfirmUserPopup extends React.Component
             confirmUserRequest((json)=>{
                 if(json.success)
                 {
-                    this.props.onPopupClose();
+                    this.props.onSuccess();
                 }
             }, this.state.currentSelection);
         }
