@@ -218,7 +218,7 @@ class AdminPanel extends React.Component
     constructor(props)
     {
         super(props);
-        this.state = {popupsVisibility:{confirmUser: false}};
+        this.state = {popupsVisibility:{confirmUser: false, addUser: false}};
 
         let eventSingleton = new EventSingleton();
         eventSingleton.subscribeToEvent('FAILED_ACTION_AUTH', (data)=>{
@@ -242,16 +242,7 @@ class AdminPanel extends React.Component
 
     tryToShowPopup(which)
     {
-        checkIfLoggedRequest((value)=>{
-            if(value)
-            {
-                this.setPopupVisibility(which, true);
-            }else{
-                let eventSingleton = new EventSingleton();
-                eventSingleton.triggerEvent('FAILED_ACTION_AUTH');
-            }
-        }
-        );
+        authorizedRequest((data)=>this.setPopupVisibility(which, true));
     }
 
     render()
@@ -259,7 +250,8 @@ class AdminPanel extends React.Component
         return(
             <div key="admin-panel">
                 <div class="admin-panel-div">           
-                    <span onClick={(event)=>this.tryToShowPopup('confirmUser')} class="button6 inline-block button-confirm-user" href="#">{"SELECT BREAKFAST MAKER"}</span>
+                    <span onClick={(event)=>this.tryToShowPopup('confirmUser')} class="button6 inline-block small-bottom-margin" href="#">{"SELECT BREAKFAST MAKER"}</span>
+                    <span onClick={(event)=>this.tryToShowPopup('addUser')} class="button6 inline-block small-bottom-margin" href="#">{"ADD USER"}</span>
                 </div>
                 <ReactCSSTransitionGroup transitionName="simple" transitionEnterTimeout={500} transitionLeaveTimeout={300}>
                     {this.state.popupsVisibility.confirmUser?<ConfirmUserPopup onPopupClose={(data)=>this.hideAllPopups()} />:[]}
@@ -283,11 +275,17 @@ class ConfirmUserPopup extends React.Component
         authorizedRequest((data)=>{
             let increment = reverse?-1:1;
             let newSelection = Math.max(this.state.currentSelection+increment, 0);
-            this.setState({currentSelection: newSelection, isLoading: true});
-            getQueueUser((json)=>{
-                this.setState({isLoading: false, loadedUser: json});
-            } ,newSelection);
+            this.selectUser(newSelection);
         });
+    }
+
+    selectUser(which_one)
+    {
+        which_one = Math.max(0, which_one);
+        this.setState({currentSelection: which_one, isLoading: true})
+        getQueueUser((json)=>{
+            this.setState({isLoading: false, loadedUser: json});
+        } ,which_one);
     }
 
     confirmUser(){
@@ -297,7 +295,7 @@ class ConfirmUserPopup extends React.Component
                 {
                     this.props.onPopupClose();
                 }
-            }, this.currentSelection);
+            }, this.state.currentSelection);
         }
         );
     }
