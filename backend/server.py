@@ -77,31 +77,31 @@ def get_first_x_in_making_queue(how_many):
 
         return make_accessible_from_javascript(json.dumps({'queue': makers}))
 
-@app.route('/attach_person_from_queue_to_brakfast/<int:which_one>', methods=['POST'])
+@app.route('/attach_person_from_queue_to_brakfast/<int:which_one>', methods=['GET'])
 @cross_origin()
 def confirm_breakfast(which_one):
-    login = ''
-    password = ''
-    try:
-        login = request.form['login']
-        password = request.form['password']
-    except Exception as e:
-        print(e)
+    login_update()
+    success = False
 
-    correct_logon = False
-    
-    conn, cursor = connect_to_db()
-    correct_logon = sq3ut.verify_admin(cursor, sq3ut.create_admin(login, password))
+    is_logged = False if 'logged_in' not in session else session['logged_in']
 
-    breakfast = sq3ut.get_nearest_breakfast(cursor, datetime.date.today())
-    user = sq3ut.get_next_maker(cursor, omit=which_one)
-    if correct_logon:
-        sq3ut.confirm_user_breakfast(cursor, user, breakfast)
-        sq3ut.cleanup_breakfasts(cursor, buffer=12)
+    if is_logged:
+        try:
+            conn, cursor = connect_to_db()
 
-    close_connection_to_db(conn)
+            breakfast = sq3ut.get_nearest_breakfast(cursor, datetime.date.today())
+            user = sq3ut.get_next_maker(cursor, omit=which_one)
+            
+            sq3ut.confirm_user_breakfast(cursor, user, breakfast)
+            sq3ut.cleanup_breakfasts(cursor, buffer=12)
 
-    return make_accessible_from_javascript(json.dumps({'correct_logon': True}) if correct_logon else json.dumps({'correct_logon': False}))
+            close_connection_to_db(conn)
+        except Exception as e:
+            success = False
+        else:
+            success = True
+
+    return make_accessible_from_javascript(json.dumps({'success': True}) if success else json.dumps({'success': False}))
 
 @app.route('/admin_login', methods=['POST'])
 @cross_origin()

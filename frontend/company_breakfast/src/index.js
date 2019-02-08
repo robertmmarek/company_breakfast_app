@@ -47,7 +47,6 @@ class App extends React.Component
     tryShowAdminPanel()
     {
         checkIfLoggedRequest((isLogged)=>{
-            console.log(isLogged);
             if(isLogged)
             {
                 this.setState({showAdminPanel: !this.state.showAdminPanel});
@@ -214,176 +213,136 @@ class UserQueue extends React.Component
     }
 }
 
-class ConfirmationPanel extends React.Component
-{
-    constructor(props)
-    {
-        super(props);
-        this.state = {activated: false, loading_user: false, loaded_user: undefined, current_selection: 0, send_popup: false, logon_failed: false, success_animation: false}
-        this.reloadUser();
-
-        let eventSingleton = new EventSingleton();
-        eventSingleton.subscribeToEvent('LOGON_CORRECT', (data)=>{
-            this.setState({send_popup: false, logon_failed: false, success_animation: true});
-            this.reloadUser();
-        });
-        eventSingleton.subscribeToEvent('LOGON_FAILED', (data)=>{this.setState({logon_failed: true})});
-    }
-
-    confirmUser()
-    {
-        let form_to_send = document.getElementById('confirmUserForm');
-        let login = form_to_send.login.value;
-        let password = form_to_send.password.value;
-        confirmUserRequest((json)=>{
-            let eventSingleton = new EventSingleton();
-            if(json.correct_logon)
-            {
-                eventSingleton.triggerEvent('LOGON_CORRECT');
-            }else{
-                
-                eventSingleton.triggerEvent('LOGON_FAILED');
-            }
-        }, login, password, this.state.current_selection);
-    }
-
-    reloadUser(new_selection=undefined)
-    {
-        this.setState({loaded_user: undefined, loading_user: true, current_selection: new_selection!=undefined?new_selection:this.state.current_selection});
-        queueRequest((json)=>{
-            this.setState({loaded_user: json, loading_user: false});
-        }, new_selection!=undefined? new_selection : this.state.current_selection)
-    }
-
-    changeSelection(decrase=false)
-    {
-        let new_selection = decrase ? Math.max(0, this.state.current_selection-1) : this.state.current_selection+1;
-        this.reloadUser(new_selection);
-    }
-
-
-    panelDiv()
-    {
-        
-        let ret_stack = [];
-        if(this.state.activated)
-        {
-           return(<div class="confirmation-panel-div">
-           <div class="center">
-           <table class="user-navigation">
-                <tr>
-                    <td class="left">
-                    <ReactCSSTransitionGroup transitionName="simple" transitionEnterTimeout={1000} transitionLeaveTimeout={500}>
-                        {(this.state.current_selection > 0) ? 
-                            <span key="decrement-button" href="#" onClick={(data)=>this.changeSelection(true)} class="left-user-selection-button button6">{"<<"}</span>
-                            :<div class="left-user-selection-button"></div>
-                        }
-                    </ReactCSSTransitionGroup>
-                    </td>
-                    <td class="middle">
-                        <table class="user-preview">
-                        <tr>
-                            <th>name</th>
-                            <th>breakfast done</th>
-                        </tr>
-                        {(this.state.loading_user) ? 
-                            <tr>
-                                <td>LOADING</td>
-                                <td>LOADING</td>
-                            </tr>
-                            :<tr>
-                                <td>{this.state.loaded_user.name+" "+this.state.loaded_user.surname}</td>
-                                <td>{this.state.loaded_user.queue_count}</td>
-                            </tr>
-                        }
-                        </table>
-                    </td>
-                    <td class="right">
-                        <span key="increment-button" href="#" onClick={(data)=>this.changeSelection()} class="right-user-selection-button button6">{">>"}</span>
-                    </td>
-                </tr>
-            </table>
-            </div>
-                    <span key="send-confirmation-button" href="#" onClick={(event)=>this.setState({send_popup: true, success_animation: false})} class="new-line button6">
-                        {"SEND CONFIRMATION"}
-                    </span>
-                </div>
-           );
-        }
-        
-        return(<div></div>);
-    }
-
-    managePopup()
-    {
-        if(this.state.send_popup){
-            return(<div key="popup" class="full-screen-popup center">
-            <div class="login-background">
-                <div class="upper-bar-div">
-                    <span onClick={(event)=>this.setState({send_popup: false, logon_failed: false, success_animation: false})} class="button6 inline-block button-close-panel" href="#">{"close"}</span>
-                </div>
-                <p class="important very-big-text">Do you want to confirm <br/>{this.state.loaded_user != undefined? this.state.loaded_user.name+" "+this.state.loaded_user.surname:""}<br/> as maker?</p>
-                <form id={"confirmUserForm"} action={'#'} method={"POST"} class="inline-block">
-                    <p class="small-text small-bottom-margin">ADMIN LOGIN:</p><input type={"text"} name={"login"}></input>
-                    <p class="small-text small-bottom-margin">ADMIN PASSWORD:</p><input type={"password"} name={"password"}></input>
-                </form>
-                <span onClick={(event)=>this.confirmUser()} class="button6 inline-block button-confirm-user" href="#">{"CONFIRM USER"}</span>
-                {this.state.logon_failed?<p class="big-text important">INCORRECT LOGIN</p>:[]}
-            </div>
-            </div>)
-        }
-        else{
-            return(<div></div>);
-        }
-
-    }
-
-    render()
-    {
-        let panel = this.panelDiv();
-        let send_popup = this.managePopup();
-
-        return(
-            <div class="confirmation-panel-show-button-div">
-                <span href="#" onClick={(event)=>this.setState({activated: !this.state.activated})} class="button6">
-                {this.state.activated?"hide confirmation panel":"show confirmation panel"}
-                </span>
-                <ReactCSSTransitionGroup transitionName="simple" transitionEnterTimeout={1000} transitionLeaveTimeout={500}>
-                {this.state.activated ? 
-                    <div key={"panel"}>
-                    {panel}
-                    </div>:<div></div>
-                }
-                </ReactCSSTransitionGroup>
-                <ReactCSSTransitionGroup transitionName={this.state.success_animation?"correct_logon":"simple"} transitionEnterTimeout={500} transitionLeaveTimeout={500}>
-                {this.state.send_popup?send_popup:<div></div>}
-                </ReactCSSTransitionGroup>
-                
-            </div>
-        );
-    }
-}
-
 class AdminPanel extends React.Component
 {
     constructor(props)
     {
         super(props);
+        this.state = {popupsVisibility:{confirmUser: false}};
+
+        let eventSingleton = new EventSingleton();
+        eventSingleton.subscribeToEvent('FAILED_ACTION_AUTH', (data)=>{
+            this.hideAllPopups();
+        });
     }
 
+    setPopupVisibility(which, value)
+    {
+        let popups = this.state.popupsVisibility;
+        popups[which] = value;
+        this.setState({popupsVisibility: popups});
+    }
+
+    hideAllPopups()
+    {
+        let popups = this.state.popupsVisibility;
+        Object.keys(popups).forEach((key, index)=>popups[key]=false);
+        this.setState({popupsVisibility: popups});
+    }
+
+    tryToShowPopup(which)
+    {
+        checkIfLoggedRequest((value)=>{
+            if(value)
+            {
+                this.setPopupVisibility(which, true);
+            }else{
+                let eventSingleton = new EventSingleton();
+                eventSingleton.triggerEvent('FAILED_ACTION_AUTH');
+            }
+        }
+        );
+    }
 
     render()
     {
         return(
             <div key="admin-panel">
-                <div class="admin-panel-div">
-                    DIV
+                <div class="admin-panel-div">           
+                    <span onClick={(event)=>this.tryToShowPopup('confirmUser')} class="button6 inline-block button-confirm-user" href="#">{"SELECT BREAKFAST MAKER"}</span>
                 </div>
+                <ReactCSSTransitionGroup transitionName="simple" transitionEnterTimeout={500} transitionLeaveTimeout={300}>
+                    {this.state.popupsVisibility.confirmUser?<ConfirmUserPopup onPopupClose={(data)=>this.hideAllPopups()} />:[]}
+                </ReactCSSTransitionGroup>
             </div>
         );
     }
 }
 
+class ConfirmUserPopup extends React.Component
+{
+    constructor(props)
+    {
+        super(props);
+        this.state = {currentSelection: 0, isLoading: true, loadedUser: undefined}
+        this.incrementSelection(true);
+    }
+
+    incrementSelection(reverse=false)
+    {
+        authorizedRequest((data)=>{
+            let increment = reverse?-1:1;
+            let newSelection = Math.max(this.state.currentSelection+increment, 0);
+            this.setState({currentSelection: newSelection, isLoading: true});
+            getQueueUser((json)=>{
+                this.setState({isLoading: false, loadedUser: json});
+            } ,newSelection);
+        });
+    }
+
+    confirmUser(){
+        authorizedRequest((data)=>{
+            confirmUserRequest((json)=>{
+                if(json.success)
+                {
+                    this.props.onPopupClose();
+                }
+            }, this.currentSelection);
+        }
+        );
+    }
+
+    render()
+    {
+        return(
+        <div class="full-screen-popup" key={"confirm-user-full-screen-popup"}>
+            <div class="login-background">
+                <div class="upper-bar-div">
+                    <span onClick={this.props.onPopupClose} class="button6 inline-block button-close-panel" href="#">{"close"}</span>
+                </div>
+                <table class="user-navigation">
+                    <tr>
+                        <td class="left">
+                            {this.state.currentSelection > 0?
+                            <span onClick={()=>this.incrementSelection(true)} class="button6 inline-block left-user-selection-button" href="#">{"<<"}</span>
+                            :[]}
+                        </td>
+                        <td class="middle">
+                            <table class="user-preview">
+                                <tr>
+                                    <td>
+                                        {this.state.isLoading?
+                                        <p class="medium-text">LOADING</p>
+                                        :<p class="medium-text">{this.state.loadedUser.name}</p>}
+                                    </td>
+                                    <td>
+                                    {this.state.isLoading?
+                                        <p class="medium-text">LOADING</p>
+                                        :<p class="medium-text">{this.state.loadedUser.surname}</p>}
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                        <td class="right">
+                        <span onClick={()=>this.incrementSelection()} class="button6 inline-block right-user-selection-button" href="#">{">>"}</span>
+                        </td>
+                    </tr>
+                </table>
+                <span onClick={()=>this.confirmUser()} class="button6 inline-block button-confirm-user" href="#">{"CONFIRM USER"}</span>
+            </div>
+        </div>);
+    }
+}
 
 /*
 */
@@ -414,6 +373,19 @@ class LoginPopup extends React.Component
     }
 }
 
+function authorizedRequest(success_callback, failure_callback=(isLogged)=>isLogged)
+{
+    checkIfLoggedRequest((isLogged)=>{
+        if(isLogged)
+        {
+            success_callback(isLogged);
+        }else{
+            let eventSingleton = new EventSingleton();
+            eventSingleton.triggerEvent('FAILED_ACTION_AUTH');
+            failure_callback(isLogged);
+        }
+    })
+}
 
 function breakfastRequest(callback)
 {
@@ -424,6 +396,12 @@ function breakfastRequest(callback)
 function queueRequest(callback, how_many=0)
 {
     let url = `http://localhost:5000/get_first_${how_many}_in_making_queue`;
+    sendGETRequestAndReturnJSON(url, callback);
+}
+
+function getQueueUser(callback, which_one=0)
+{
+    let url = `http://localhost:5000/${which_one}_in_making_queue`;
     sendGETRequestAndReturnJSON(url, callback);
 }
 
@@ -455,10 +433,10 @@ function logoutRequest(callback)
     sendPOSTRequestAndReturnJSON(url, {}, callback, (json)=>('correct_logon' in json)?json['correct_logon']:false);
 }
 
-function confirmUserRequest(callback, login, password, which_one=0)
+function confirmUserRequest(callback, which_one=0)
 {
     let url = `http://localhost:5000/attach_person_from_queue_to_brakfast/${which_one}`;
-    sendPOSTRequestAndReturnJSON(url, {login: login, password: password}, callback);
+    sendGETRequestAndReturnJSON(url, callback);
 }
 
 function sendPOSTRequestAndReturnJSON(request_url, post_data, callback, json_processing=(json)=>json)
