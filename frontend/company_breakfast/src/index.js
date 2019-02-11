@@ -164,7 +164,7 @@ class UserQueue extends React.Component
 
             for(let i=0; i<json.queue.length; i++)
             {
-                temp_state.queue[i] = {name: json.queue[i].name+" "+json.queue[i].surname, done_already: json.queue[i].queue_count};
+                temp_state.queue[i] = json.queue[i]!=null?{name: json.queue[i].name+" "+json.queue[i].surname, done_already: json.queue[i].queue_count}:{name:'', done_already:0};
             }
             this.setState(temp_state);
         }
@@ -218,7 +218,7 @@ class AdminPanel extends React.Component
     constructor(props)
     {
         super(props);
-        this.state = {popupsVisibility:{confirmUser: false, addUser: false}, showSuccess: false};
+        this.state = {popupsVisibility:{confirmUser: false, addUser: false, removeUser: false}, showSuccess: false};
 
         let eventSingleton = new EventSingleton();
         eventSingleton.subscribeToEvent('FAILED_ACTION_AUTH', (data)=>{
@@ -252,10 +252,17 @@ class AdminPanel extends React.Component
                 <div class="admin-panel-div">           
                     <span onClick={(event)=>this.tryToShowPopup('confirmUser')} class="button6 inline-block small-bottom-margin" href="#">{"SELECT BREAKFAST MAKER"}</span>
                     <span onClick={(event)=>this.tryToShowPopup('addUser')} class="button6 inline-block small-bottom-margin" href="#">{"ADD USER"}</span>
+                    <span onClick={(event)=>this.tryToShowPopup('removeUser')} class="button6 inline-block small-bottom-margin" href="#">{"REMOVE USER"}</span>
                 </div>
                 <ReactCSSTransitionGroup transitionName={this.state.showSuccess?"correct_logon":"simple"} transitionEnterTimeout={500} transitionLeaveTimeout={300}>
                     {this.state.popupsVisibility.confirmUser?
                     <ConfirmUserPopup onSuccess={(data)=>this.hideAllPopups(true)} onPopupClose={(data)=>this.hideAllPopups()} />
+                    :[]}
+                    {this.state.popupsVisibility.addUser?
+                    <AddUserPopup onSuccess={(data)=>this.hideAllPopups(true)} onPopupClose={(data)=>this.hideAllPopups()} />
+                    :[]}
+                    {this.state.popupsVisibility.removeUser?
+                    <RemoveUserPopup onSuccess={(data)=>this.hideAllPopups(true)} onPopupClose={(data)=>this.hideAllPopups()} />
                     :[]}
                 </ReactCSSTransitionGroup>
             </div>
@@ -268,13 +275,78 @@ class AddUserPopup extends React.Component
     constructor(props)
     {
         super(props);
+        this.state = {actionFailed: false, breakfastAmount: 0}
+        let eventSingleton = new EventSingleton();
+        eventSingleton.subscribeToEvent('FAILED_ACTION_AUTH', (data)=>{
+            this.setState({actionFailed: true});
+        });
+    }
+
+    incrementBreakfast(reverse=false)
+    {
+        let prev = this.state.breakfastAmount;
+        let increment = reverse?-1:1;
+        this.setState({breakfastAmount: Math.max(0, prev+increment)});
+    }
+
+    tryAddUser()
+    {
+        let user_create_form = document.getElementById('user-create-form');
+        let name = user_create_form.name.value;
+        let surname = user_create_form.surname.value;
+        let breakfasts = this.state.breakfastAmount;
+        authorizedRequest((data)=>{
+            addUserRequest((correct)=>
+            {
+                if(correct)
+                {
+                    this.props.onSuccess();
+                }else{
+                    this.setState({actionFailed: true});
+                }
+            },
+            name,
+            surname,
+            breakfasts);
+        },
+        (data)=>{
+            this.setState({actionFailed: true});
+        });
     }
 
     render()
     {
         return(
-        <div></div>
-        );
+            <div class="full-screen-popup" key={"full-screen-popup"}>
+                <div class="login-background">
+                    <div class="upper-bar-div">
+                        <span onClick={this.props.onPopupClose} class="button6 inline-block button-close-panel" href="#">{"close"}</span>
+                    </div>
+                    <form id={"user-create-form"} method="POST" action="#">
+                        <p class="small-text small-bottom-margin">USER LOGIN:</p><input type={"text"} name={"name"}></input>
+                        <p class="small-text small-bottom-margin">USER SURNAME:</p><input type={"text"} name={"surname"}></input>
+                        <p class="small-text small-bottom-margin">BREAKFASTS DONE:</p>
+                        <table class="user-navigation">
+                            <tr>
+                                <td class="left">
+                                    {this.state.breakfastAmount > 0?
+                                    <span onClick={()=>this.incrementBreakfast(true)} class="button6 inline-block left-user-selection-button" href="#">{"<<"}</span>
+                                    :[]}
+                                </td>
+                                <td class="middle">
+                                    <p class="important big-text">{this.state.breakfastAmount}</p>
+                                </td>
+                                <td class="right">
+                                <span onClick={()=>this.incrementBreakfast()} class="button6 inline-block right-user-selection-button" href="#">{">>"}</span>
+                                </td>
+                            </tr>
+                        </table>
+                        <span onClick={(event)=>this.tryAddUser()} class="button6 inline-block button-confirm-user" href="#">{"ADD"}</span>
+                        {this.actionFailed?<p class="big-text important">FAILED</p>:[]}
+                    </form>
+                </div>
+            </div>
+            );
     }
 }
 
@@ -359,6 +431,88 @@ class ConfirmUserPopup extends React.Component
     }
 }
 
+
+class RemoveUserPopup extends React.Component
+{
+    constructor(props)
+    {
+        super(props);
+        this.state = {currentSelection: 0, isLoading: true, loadedUser: undefined}
+        this.incrementSelection(true);
+    }
+
+    incrementSelection(reverse=false)
+    {
+        authorizedRequest((data)=>{
+            let increment = reverse?-1:1;
+            let newSelection = Math.max(this.state.currentSelection+increment, 0);
+            this.selectUser(newSelection);
+        });
+    }
+
+    selectUser(which_one)
+    {
+        which_one = Math.max(0, which_one);
+        this.setState({currentSelection: which_one, isLoading: true})
+        getQueueUser((json)=>{
+            this.setState({isLoading: false, loadedUser: json});
+        } ,which_one);
+    }
+
+    removeUser(){
+        authorizedRequest((data)=>{
+            removeUserRequest((success)=>{
+                if(success)
+                {
+                    this.props.onSuccess();
+                }
+            }, this.state.loadedUser);
+        }
+        );
+    }
+
+    render()
+    {
+        return(
+        <div class="full-screen-popup" key={"confirm-user-full-screen-popup"}>
+            <div class="login-background">
+                <div class="upper-bar-div">
+                    <span onClick={this.props.onPopupClose} class="button6 inline-block button-close-panel" href="#">{"close"}</span>
+                </div>
+                <table class="user-navigation">
+                    <tr>
+                        <td class="left">
+                            {this.state.currentSelection > 0?
+                            <span onClick={()=>this.incrementSelection(true)} class="button6 inline-block left-user-selection-button" href="#">{"<<"}</span>
+                            :[]}
+                        </td>
+                        <td class="middle">
+                            <table class="user-preview">
+                                <tr>
+                                    <td>
+                                        {this.state.isLoading?
+                                        <p class="medium-text">LOADING</p>
+                                        :<p class="medium-text">{this.state.loadedUser.name}</p>}
+                                    </td>
+                                    <td>
+                                    {this.state.isLoading?
+                                        <p class="medium-text">LOADING</p>
+                                        :<p class="medium-text">{this.state.loadedUser.surname}</p>}
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                        <td class="right">
+                        <span onClick={()=>this.incrementSelection()} class="button6 inline-block right-user-selection-button" href="#">{">>"}</span>
+                        </td>
+                    </tr>
+                </table>
+                <span onClick={()=>this.removeUser()} class="button6 inline-block button-confirm-user" href="#">{"REMOVE USER"}</span>
+            </div>
+        </div>);
+    }
+}
+
 /*
 */
 class LoginPopup extends React.Component
@@ -435,11 +589,18 @@ function loginRequest(callback, login, password)
 function addUserRequest(callback, name, surname, how_many_breakfast_made=0)
 {
     let url = 'http://localhost:5000/add_user';
-    sendPOSTRequestAndReturnJSON(url, {name: name, 
-        surname: surname, 
-        breakfasts_done: how_many_breakfast_made}, 
+    sendGETRequestAndReturnJSON(url, 
         callback, 
-        (json)=>('success' in json)?json['success']:false);
+        (json)=>('success' in json)?json['success']:false,
+        {name: name, 
+         surname: surname, 
+         breakfasts_done: how_many_breakfast_made});
+}
+
+function removeUserRequest(callback, user)
+{
+    let url = 'http://localhost:5000/delete_user';
+    sendGETRequestAndReturnJSON(url, callback, (json)=>('success' in json)?json['success']:false, {hash: user.hash});
 }
 
 function logoutRequest(callback)
@@ -475,11 +636,18 @@ function sendPOSTRequestAndReturnJSON(request_url, post_data, callback, json_pro
     req.send(post_data_string);
 }
 
-function sendGETRequestAndReturnJSON(request_url, callback, json_processing=(json)=>json)
+function sendGETRequestAndReturnJSON(request_url, callback, json_processing=(json)=>json, post_data={})
 {
     let req = new XMLHttpRequest();
     req.withCredentials = true;
-    req.open('GET', request_url, true)
+
+    let post_data_string = '';
+    let keys = Object.keys(post_data)
+    keys.forEach((key, index)=>{
+        post_data_string += `${key}=${post_data[key]}` +  String((index != (keys.length-1))?"&":"");
+    })
+
+    req.open('GET', request_url+(post_data_string.length>0?"?"+post_data_string:''), true)
     req.onloadend = (event) => {
         if(req.readyState == 4 && req.status == 200)
         {

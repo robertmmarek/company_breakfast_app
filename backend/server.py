@@ -164,6 +164,28 @@ def add_user():
 
     return make_accessible_from_javascript(json.dumps({'success': success}))   
 
+@app.route('/delete_user', methods=['GET'])
+@cross_origin()
+def delete_user():
+    login_update()
+    success = False
+    
+    if session.get('logged_in') and all([key in request.args for key in ['hash']]):
+        hash = request.args['hash']
+
+        conn, cursor = connect_to_db()
+        try:
+            sq3ut.delete_user(cursor, hash)
+        except Exception as e:
+            print(e)
+            success = False
+        else:
+            success = True     
+
+        close_connection_to_db(conn) 
+
+    return make_accessible_from_javascript(json.dumps({'success': success}))  
+
 
 @app.route('/add_admin', methods=['POST'])
 @cross_origin()

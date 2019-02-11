@@ -48,6 +48,15 @@ def initialize_breakfasts_table(cursor, table_name=BREAKFASTS):
         add_breakfast(cursor, create_breakfast(date, done_by=null_user['hash']))
 
 """
+count rows in specific table
+@cursor - sqlite3 cursor object
+@table - string
+"""
+def count_rows(cursor, table):
+    cursor.execute("SELECT COUNT(*) FROM "+sanitize_sql_string(table)+";")
+    return cursor.fetch()
+
+"""
 add user to USERS table
 @cursor - sqlite3 cursor object
 @user - dictionary containing user data
@@ -56,6 +65,15 @@ add user to USERS table
 def add_user(cursor, user):
     cursor.execute("INSERT INTO users ("+", ".join([sanitize_sql_string(el) for el in USERS_COLUMNS])+") \
                     VALUES ("+", ".join(["?" for key in USERS_COLUMNS])+");", tuple([user[key] for key in USERS_COLUMNS]))
+
+
+"""
+Delete user based on hash
+@cursor - sqlite3 cursor object
+@hash - string
+"""
+def delete_user(cursor, hash):
+    cursor.execute("DELETE FROM users WHERE hash=?;", (hash,))
 
 """
 Select user from table USERS based on specific key and value. 
@@ -98,6 +116,8 @@ def create_user(name, surname, queue_count=0):
     ret_dict['queue_count'] = int(queue_count)
     ret_dict['hash'] = _hash_user(ret_dict)
     return ret_dict
+
+
 
 """
 hash dictionary containing user
