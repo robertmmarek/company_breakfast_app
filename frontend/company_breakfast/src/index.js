@@ -323,7 +323,7 @@ class AddUserPopup extends React.Component
                         <span onClick={this.props.onPopupClose} class="button6 inline-block button-close-panel" href="#">{"close"}</span>
                     </div>
                     <form id={"user-create-form"} method="POST" action="#">
-                        <p class="small-text small-bottom-margin">USER LOGIN:</p><input type={"text"} name={"name"}></input>
+                        <p class="small-text small-bottom-margin">USER NAME:</p><input type={"text"} name={"name"}></input>
                         <p class="small-text small-bottom-margin">USER SURNAME:</p><input type={"text"} name={"surname"}></input>
                         <p class="small-text small-bottom-margin">BREAKFASTS DONE:</p>
                         <table class="user-navigation">
